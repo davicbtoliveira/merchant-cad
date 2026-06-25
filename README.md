@@ -40,8 +40,10 @@ telefone        -> phone
 
 ```text
 POST /api/merchants/
+GET  /api/merchants/
+GET  /api/merchants/?status=draft
 GET  /api/merchants/{id}/
 ```
 
 New merchants start with status `draft`. CNPJ input may include punctuation, but is stored with digits only.
-
+Merchant list and detail responses include only the public Merchant fields, without embedded timeline data.
