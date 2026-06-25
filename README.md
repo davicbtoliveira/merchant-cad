@@ -43,7 +43,17 @@ POST /api/merchants/
 GET  /api/merchants/
 GET  /api/merchants/?status=draft
 GET  /api/merchants/{id}/
+PATCH /api/merchants/{id}/
+POST /api/merchants/{id}/submit-for-analysis/
+GET  /api/merchants/{id}/timeline/
 ```
 
 New merchants start with status `draft`. CNPJ input may include punctuation, but is stored with digits only.
 Merchant list and detail responses include only the public Merchant fields, without embedded timeline data.
+
+Registration data can be updated only while a merchant is in `draft`. The `status` field is read-only in
+regular create and update operations; workflow changes use explicit action endpoints.
+
+`POST /api/merchants/{id}/submit-for-analysis/` moves a merchant from `draft` to `pending_analysis`,
+creates the first timeline event with the message `Merchant enviado para análise`, and returns the updated
+merchant. `GET /api/merchants/{id}/timeline/` returns that merchant's events in chronological order.
