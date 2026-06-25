@@ -2,10 +2,30 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from merchants.models import Merchant
+from merchants.models import Merchant, MerchantEvent
 
 
 class MerchantApiTests(APITestCase):
+    def create_merchant(
+        self,
+        *,
+        cnpj="12.345.678/0001-90",
+        legal_name="Acme Pagamentos LTDA",
+        contact_email="ops@acme.example",
+    ):
+        response = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": cnpj,
+                "legal_name": legal_name,
+                "contact_email": contact_email,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response
+
     def test_creates_merchant_in_draft_and_normalizes_cnpj(self):
         response = self.client.post(
             reverse("merchant-list"),
@@ -184,3 +204,145 @@ class MerchantApiTests(APITestCase):
                     response.data[0]["legal_name"],
                     f"Merchant {merchant_status}",
                 )
+
+    def test_updates_registration_data_while_merchant_is_in_draft(self):
+        created = self.create_merchant()
+
+        response = self.client.patch(
+            reverse("merchant-detail", kwargs={"pk": created.data["id"]}),
+            {
+                "legal_name": "Acme Solucoes Financeiras LTDA",
+                "trade_name": "Acme Solucoes",
+                "contact_email": "analise@acme.example",
+                "phone": "+55 11 98888-7777",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["legal_name"], "Acme Solucoes Financeiras LTDA")
+        self.assertEqual(response.data["trade_name"], "Acme Solucoes")
+        self.assertEqual(response.data["contact_email"], "analise@acme.example")
+        self.assertEqual(response.data["phone"], "+55 11 98888-7777")
+        self.assertEqual(response.data["status"], "draft")
+
+    def test_does_not_allow_status_to_be_changed_by_regular_update(self):
+        created = self.create_merchant()
+
+        response = self.client.patch(
+            reverse("merchant-detail", kwargs={"pk": created.data["id"]}),
+            {"status": "pending_analysis"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "draft")
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.status, Merchant.Status.DRAFT)
+        self.assertEqual(MerchantEvent.objects.count(), 0)
+
+    def test_does_not_update_registration_data_outside_draft(self):
+        created = self.create_merchant()
+        self.client.post(
+            reverse("merchant-submit-for-analysis", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+
+        response = self.client.patch(
+            reverse("merchant-detail", kwargs={"pk": created.data["id"]}),
+            {"legal_name": "Nome Alterado LTDA"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("status", response.data)
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.legal_name, "Acme Pagamentos LTDA")
+
+    def test_submits_draft_merchant_for_analysis_and_creates_event(self):
+        created = self.create_merchant()
+
+        response = self.client.post(
+            reverse("merchant-submit-for-analysis", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "pending_analysis")
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.status, Merchant.Status.PENDING_ANALYSIS)
+
+        event = MerchantEvent.objects.get(merchant=merchant)
+        self.assertEqual(event.message, "Merchant enviado para análise")
+
+    def test_does_not_submit_merchant_for_analysis_outside_draft(self):
+        created = self.create_merchant()
+        self.client.post(
+            reverse("merchant-submit-for-analysis", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+
+        response = self.client.post(
+            reverse("merchant-submit-for-analysis", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("status", response.data)
+        self.assertEqual(MerchantEvent.objects.count(), 1)
+
+    def test_timeline_starts_empty_for_new_draft_merchant(self):
+        created = self.create_merchant()
+
+        response = self.client.get(
+            reverse("merchant-timeline", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, [])
+        self.assertEqual(MerchantEvent.objects.count(), 0)
+
+    def test_timeline_returns_only_merchant_events_in_chronological_order(self):
+        first = self.create_merchant()
+        second = self.create_merchant(
+            cnpj="98.765.432/0001-10",
+            legal_name="Beta Comercio LTDA",
+            contact_email="ops@beta.example",
+        )
+        first_merchant = Merchant.objects.get(pk=first.data["id"])
+        second_merchant = Merchant.objects.get(pk=second.data["id"])
+        first_event = MerchantEvent.objects.create(
+            merchant=first_merchant,
+            message="Merchant enviado para análise",
+        )
+        second_event = MerchantEvent.objects.create(
+            merchant=first_merchant,
+            message="Merchant aprovado",
+        )
+        MerchantEvent.objects.create(
+            merchant=second_merchant,
+            message="Merchant de outro cadastro",
+        )
+
+        response = self.client.get(
+            reverse("merchant-timeline", kwargs={"pk": first.data["id"]}),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [event["id"] for event in response.data],
+            [first_event.id, second_event.id],
+        )
+        self.assertEqual(
+            [event["message"] for event in response.data],
+            ["Merchant enviado para análise", "Merchant aprovado"],
+        )
+
+        for event in response.data:
+            self.assertEqual(set(event.keys()), {"id", "message", "created_at"})
+            self.assertIn("created_at", event)

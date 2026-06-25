@@ -28,3 +28,18 @@ class Merchant(models.Model):
     def __str__(self) -> str:
         return self.legal_name
 
+
+class MerchantEvent(models.Model):
+    merchant = models.ForeignKey(
+        Merchant,
+        on_delete=models.CASCADE,
+        related_name="events",
+    )
+    message = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at", "id"]
+
+    def __str__(self) -> str:
+        return self.message

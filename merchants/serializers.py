@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from merchants.models import Merchant
+from merchants.models import Merchant, MerchantEvent
 
 
 def normalize_cnpj(value: str) -> str:
@@ -38,3 +38,9 @@ class MerchantSerializer(serializers.ModelSerializer):
 
         return normalized_cnpj
 
+
+class MerchantEventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MerchantEvent
+        fields = ["id", "message", "created_at"]
+        read_only_fields = fields
