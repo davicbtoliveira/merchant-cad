@@ -48,6 +48,16 @@ class MerchantViewSet(
 
         return Response(serializer.data)
 
+    @action(detail=True, methods=["post"])
+    def approve(self, request, pk=None):
+        merchant = self._enforce_business_rule(
+            services.approve_merchant,
+            self.get_object(),
+        )
+        serializer = self.get_serializer(merchant)
+
+        return Response(serializer.data)
+
     @action(detail=True, methods=["get"])
     def timeline(self, request, pk=None):
         merchant = self.get_object()

@@ -294,6 +294,50 @@ class MerchantApiTests(APITestCase):
         self.assertIn("status", response.data)
         self.assertEqual(MerchantEvent.objects.count(), 1)
 
+    def test_approves_pending_analysis_merchant_and_creates_event(self):
+        created = self.create_merchant()
+        self.client.post(
+            reverse("merchant-submit-for-analysis", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+
+        response = self.client.post(
+            reverse("merchant-approve", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "approved")
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.status, Merchant.Status.APPROVED)
+
+        timeline = self.client.get(
+            reverse("merchant-timeline", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+
+        self.assertEqual(timeline.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [event["message"] for event in timeline.data],
+            ["Merchant enviado para análise", "Merchant aprovado"],
+        )
+
+    def test_does_not_approve_merchant_outside_pending_analysis(self):
+        created = self.create_merchant()
+
+        response = self.client.post(
+            reverse("merchant-approve", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("status", response.data)
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.status, Merchant.Status.DRAFT)
+        self.assertEqual(MerchantEvent.objects.count(), 0)
+
     def test_timeline_starts_empty_for_new_draft_merchant(self):
         created = self.create_merchant()
 

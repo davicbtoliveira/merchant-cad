@@ -45,6 +45,7 @@ GET  /api/merchants/?status=draft
 GET  /api/merchants/{id}/
 PATCH /api/merchants/{id}/
 POST /api/merchants/{id}/submit-for-analysis/
+POST /api/merchants/{id}/approve/
 GET  /api/merchants/{id}/timeline/
 ```
 
@@ -56,4 +57,6 @@ regular create and update operations; workflow changes use explicit action endpo
 
 `POST /api/merchants/{id}/submit-for-analysis/` moves a merchant from `draft` to `pending_analysis`,
 creates the first timeline event with the message `Merchant enviado para análise`, and returns the updated
-merchant. `GET /api/merchants/{id}/timeline/` returns that merchant's events in chronological order.
+merchant. `POST /api/merchants/{id}/approve/` moves a merchant from `pending_analysis` to `approved`,
+creates a timeline event with the message `Merchant aprovado`, and returns the updated merchant.
+`GET /api/merchants/{id}/timeline/` returns that merchant's events in chronological order.
