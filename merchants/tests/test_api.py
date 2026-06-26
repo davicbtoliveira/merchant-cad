@@ -3,9 +3,10 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from merchants.models import Merchant, MerchantEvent
+from merchants.services import APPROVE_MERCHANT_MESSAGE, SUBMIT_FOR_ANALYSIS_MESSAGE
 
 
-class MerchantApiTests(APITestCase):
+class MerchantApiTestCase(APITestCase):
     def create_merchant(
         self,
         *,
@@ -26,6 +27,8 @@ class MerchantApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         return response
 
+
+class MerchantCreationTests(MerchantApiTestCase):
     def test_creates_merchant_in_draft_and_normalizes_cnpj(self):
         response = self.client.post(
             reverse("merchant-list"),
@@ -90,7 +93,7 @@ class MerchantApiTests(APITestCase):
         self.assertEqual(response.data["phone"], "")
 
     def test_rejects_duplicate_cnpj_after_normalization(self):
-        self.client.post(
+        first = self.client.post(
             reverse("merchant-list"),
             {
                 "cnpj": "12.345.678/0001-90",
@@ -99,6 +102,7 @@ class MerchantApiTests(APITestCase):
             },
             format="json",
         )
+        self.assertEqual(first.status_code, status.HTTP_201_CREATED)
 
         response = self.client.post(
             reverse("merchant-list"),
@@ -113,6 +117,8 @@ class MerchantApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("cnpj", response.data)
 
+
+class MerchantReadTests(MerchantApiTestCase):
     def test_retrieves_merchant_by_id(self):
         created = self.client.post(
             reverse("merchant-list"),
@@ -205,6 +211,8 @@ class MerchantApiTests(APITestCase):
                     f"Merchant {merchant_status}",
                 )
 
+
+class MerchantUpdateTests(MerchantApiTestCase):
     def test_updates_registration_data_while_merchant_is_in_draft(self):
         created = self.create_merchant()
 
@@ -255,12 +263,14 @@ class MerchantApiTests(APITestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
         self.assertIn("status", response.data)
 
         merchant = Merchant.objects.get(pk=created.data["id"])
         self.assertEqual(merchant.legal_name, "Acme Pagamentos LTDA")
 
+
+class MerchantWorkflowTests(MerchantApiTestCase):
     def test_submits_draft_merchant_for_analysis_and_creates_event(self):
         created = self.create_merchant()
 
@@ -276,7 +286,7 @@ class MerchantApiTests(APITestCase):
         self.assertEqual(merchant.status, Merchant.Status.PENDING_ANALYSIS)
 
         event = MerchantEvent.objects.get(merchant=merchant)
-        self.assertEqual(event.message, "Merchant enviado para análise")
+        self.assertEqual(event.message, SUBMIT_FOR_ANALYSIS_MESSAGE)
 
     def test_does_not_submit_merchant_for_analysis_outside_draft(self):
         created = self.create_merchant()
@@ -290,7 +300,7 @@ class MerchantApiTests(APITestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
         self.assertIn("status", response.data)
         self.assertEqual(MerchantEvent.objects.count(), 1)
 
@@ -320,7 +330,7 @@ class MerchantApiTests(APITestCase):
         self.assertEqual(timeline.status_code, status.HTTP_200_OK)
         self.assertEqual(
             [event["message"] for event in timeline.data],
-            ["Merchant enviado para análise", "Merchant aprovado"],
+            [SUBMIT_FOR_ANALYSIS_MESSAGE, APPROVE_MERCHANT_MESSAGE],
         )
 
     def test_does_not_approve_merchant_outside_pending_analysis(self):
@@ -331,13 +341,15 @@ class MerchantApiTests(APITestCase):
             format="json",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
         self.assertIn("status", response.data)
 
         merchant = Merchant.objects.get(pk=created.data["id"])
         self.assertEqual(merchant.status, Merchant.Status.DRAFT)
         self.assertEqual(MerchantEvent.objects.count(), 0)
 
+
+class MerchantTimelineTests(MerchantApiTestCase):
     def test_timeline_starts_empty_for_new_draft_merchant(self):
         created = self.create_merchant()
 
@@ -361,11 +373,11 @@ class MerchantApiTests(APITestCase):
         second_merchant = Merchant.objects.get(pk=second.data["id"])
         first_event = MerchantEvent.objects.create(
             merchant=first_merchant,
-            message="Merchant enviado para análise",
+            message=SUBMIT_FOR_ANALYSIS_MESSAGE,
         )
         second_event = MerchantEvent.objects.create(
             merchant=first_merchant,
-            message="Merchant aprovado",
+            message=APPROVE_MERCHANT_MESSAGE,
         )
         MerchantEvent.objects.create(
             merchant=second_merchant,
@@ -384,7 +396,7 @@ class MerchantApiTests(APITestCase):
         )
         self.assertEqual(
             [event["message"] for event in response.data],
-            ["Merchant enviado para análise", "Merchant aprovado"],
+            [SUBMIT_FOR_ANALYSIS_MESSAGE, APPROVE_MERCHANT_MESSAGE],
         )
 
         for event in response.data:
