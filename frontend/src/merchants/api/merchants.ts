@@ -163,6 +163,69 @@ export function useUpdateMerchant() {
   });
 }
 
+async function statusTransition(
+  merchantId: number,
+  action: string,
+  body?: Record<string, unknown>,
+): Promise<Merchant> {
+  const response = await fetch(`${BASE_URL}/${merchantId}/${action}/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!response.ok) {
+    const responseBody = await response.json().catch(() => null);
+    const error = new Error("Erro na transição de status") as Error & {
+      status: number;
+      body: unknown;
+    };
+    error.status = response.status;
+    error.body = responseBody;
+    throw error;
+  }
+
+  return response.json();
+}
+
+function useStatusTransition(action: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      merchantId,
+      reason,
+    }: {
+      merchantId: number;
+      reason?: string;
+    }) => {
+      const body = reason ? { reason } : undefined;
+      return statusTransition(merchantId, action, body);
+    },
+    onSuccess: (merchant) => {
+      queryClient.invalidateQueries({ queryKey: ["merchants"] });
+      queryClient.invalidateQueries({ queryKey: ["merchant", merchant.id] });
+      queryClient.invalidateQueries({ queryKey: ["timeline", merchant.id] });
+    },
+  });
+}
+
+export function useSubmitForAnalysis() {
+  return useStatusTransition("submit-for-analysis");
+}
+
+export function useApproveMerchant() {
+  return useStatusTransition("approve");
+}
+
+export function useRejectMerchant() {
+  return useStatusTransition("reject");
+}
+
+export function useBlockMerchant() {
+  return useStatusTransition("block");
+}
+
 export function formatCnpj(cnpj: string): string {
   const digits = cnpj.replace(/\D/g, "");
   if (digits.length !== 14) return cnpj;
