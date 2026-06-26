@@ -5,6 +5,7 @@ from rest_framework.test import APITestCase
 from merchants.models import Merchant, MerchantEvent
 from merchants.services import (
     APPROVE_MERCHANT_MESSAGE,
+    BLOCK_MERCHANT_MESSAGE,
     REJECT_MERCHANT_MESSAGE,
     SUBMIT_FOR_ANALYSIS_MESSAGE,
 )
@@ -423,11 +424,119 @@ class MerchantRejectTests(MerchantApiTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("reason", response.data)
 
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.status, Merchant.Status.PENDING_ANALYSIS)
+        self.assertEqual(MerchantEvent.objects.count(), 1)
+
     def test_does_not_reject_merchant_outside_pending_analysis(self):
         created = self.create_merchant()
 
         response = self.client.post(
             reverse("merchant-reject", kwargs={"pk": created.data["id"]}),
+            {"reason": "Qualquer motivo"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+        self.assertIn("status", response.data)
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.status, Merchant.Status.DRAFT)
+        self.assertEqual(MerchantEvent.objects.count(), 0)
+
+
+class MerchantBlockTests(MerchantApiTestCase):
+    def test_blocks_approved_merchant_and_creates_event(self):
+        created = self.create_merchant()
+        self.client.post(
+            reverse("merchant-submit-for-analysis", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+        self.client.post(
+            reverse("merchant-approve", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+
+        response = self.client.post(
+            reverse("merchant-block", kwargs={"pk": created.data["id"]}),
+            {"reason": "Fraude documental"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "blocked")
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.status, Merchant.Status.BLOCKED)
+
+        timeline = self.client.get(
+            reverse("merchant-timeline", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+
+        self.assertEqual(timeline.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [event["message"] for event in timeline.data],
+            [
+                SUBMIT_FOR_ANALYSIS_MESSAGE,
+                APPROVE_MERCHANT_MESSAGE,
+                BLOCK_MERCHANT_MESSAGE.format("Fraude documental"),
+            ],
+        )
+
+    def test_requires_reason_when_blocking(self):
+        created = self.create_merchant()
+        self.client.post(
+            reverse("merchant-submit-for-analysis", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+        self.client.post(
+            reverse("merchant-approve", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+
+        response = self.client.post(
+            reverse("merchant-block", kwargs={"pk": created.data["id"]}),
+            {},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("reason", response.data)
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.status, Merchant.Status.APPROVED)
+        self.assertEqual(MerchantEvent.objects.count(), 2)
+
+    def test_rejects_empty_reason_when_blocking(self):
+        created = self.create_merchant()
+        self.client.post(
+            reverse("merchant-submit-for-analysis", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+        self.client.post(
+            reverse("merchant-approve", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+
+        response = self.client.post(
+            reverse("merchant-block", kwargs={"pk": created.data["id"]}),
+            {"reason": ""},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("reason", response.data)
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.status, Merchant.Status.APPROVED)
+        self.assertEqual(MerchantEvent.objects.count(), 2)
+
+    def test_does_not_block_merchant_outside_approved(self):
+        created = self.create_merchant()
+
+        response = self.client.post(
+            reverse("merchant-block", kwargs={"pk": created.data["id"]}),
             {"reason": "Qualquer motivo"},
             format="json",
         )
