@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -45,11 +46,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "merchant_cad.wsgi.application"
 
-DATABASES = {
-    "default": {
+def database_config(env):
+    if env.get("POSTGRES_DB"):
+        return {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": env["POSTGRES_DB"],
+            "USER": env.get("POSTGRES_USER", "postgres"),
+            "PASSWORD": env.get("POSTGRES_PASSWORD", "postgres"),
+            "HOST": env.get("POSTGRES_HOST", "localhost"),
+            "PORT": env.get("POSTGRES_PORT", "5432"),
+        }
+
+    return {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
     }
+
+
+DATABASES = {
+    "default": database_config(os.environ),
 }
 
 LANGUAGE_CODE = "en-us"
@@ -71,4 +86,3 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.MultiPartParser",
     ],
 }
-
