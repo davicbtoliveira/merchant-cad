@@ -17,7 +17,13 @@ No `playwright.config.ts`, o servidor Django é gerenciado como um
 `webServer` adicional:
 1. Roda `python manage.py migrate` com `DB_NAME=e2e_db` para criar as
    tabelas no banco isolado.
-2. Sobe `python manage.py runserver` na porta 8000 com `DB_NAME=e2e_db`.
+2. Sobe `python manage.py runserver` na porta 8001 com `DB_NAME=e2e_db`.
+
+O servidor Vite também é gerenciado pelo Playwright com a variável
+`API_TARGET=http://localhost:8001`, fazendo o proxy de `/api` para o
+Django de teste em vez do dev (porta 8000). O `vite.config.ts` lê
+`API_TARGET` (default `http://localhost:8000`), mantendo o fluxo de
+dev inalterado.
 
 O Playwright gerencia o ciclo de vida — inicia antes dos testes e finaliza
 ao término.
@@ -33,8 +39,9 @@ ao término.
 
 ## Consequências
 
-- `npm run test:e2e` exige porta 8000 livre (o Playwright gerencia o
-  servidor Django; conflito com outra instância impede a execução).
+- `npm run test:e2e` exige porta 8001 livre para o Django e 5173 para o
+  Vite (ambos gerenciados pelo Playwright). A porta 8000 fica livre para
+  um servidor Django de dev simultâneo.
 - `e2e_db.sqlite3` (ou o nome definido via `DB_NAME` para SQLite) não é
   versionado — `.gitignore` atualizado.
 - A suíte de testes backend (`APITestCase`) continua inalterada — o test

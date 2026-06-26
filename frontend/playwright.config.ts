@@ -12,15 +12,15 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: `DB_NAME=${dbName} ../manage.py migrate --noinput && DB_NAME=${dbName} ../manage.py runserver 0.0.0.0:8000 --noreload`,
-      port: 8000,
+      command: `DB_NAME=${dbName} python ../manage.py migrate --noinput && DB_NAME=${dbName} python ../manage.py runserver 0.0.0.0:8001 --noreload`,
+      port: 8001,
       reuseExistingServer: false,
       timeout: 30000,
     },
     {
-      command: "npm run dev",
+      command: "API_TARGET=http://localhost:8001 npm run dev",
       url: "http://localhost:5173",
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false,
       timeout: 30000,
     },
   ],
