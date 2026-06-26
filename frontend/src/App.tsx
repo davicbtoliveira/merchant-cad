@@ -3,12 +3,14 @@ import { createBrowserRouter, Navigate, RouterProvider } from "react-router";
 import { Toaster } from "sonner";
 import { MerchantDetailPage } from "./merchants/pages/MerchantDetailPage";
 import { MerchantListPage } from "./merchants/pages/MerchantListPage";
+import { MerchantNewPage } from "./merchants/pages/MerchantNewPage";
 
 const queryClient = new QueryClient();
 
 const router = createBrowserRouter([
   { path: "/", element: <Navigate to="/merchants" replace /> },
   { path: "/merchants", element: <MerchantListPage /> },
+  { path: "/merchants/new", element: <MerchantNewPage /> },
   { path: "/merchants/:id", element: <MerchantDetailPage /> },
 ]);
 

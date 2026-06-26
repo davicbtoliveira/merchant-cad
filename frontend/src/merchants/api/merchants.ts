@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export type MerchantStatus =
   | "draft"
@@ -85,6 +85,40 @@ export function useTimeline(id: number) {
     queryKey: ["timeline", id],
     queryFn: () => fetchTimeline(id),
     enabled: !Number.isNaN(id),
+  });
+}
+
+export async function createMerchant(
+  data: Omit<Merchant, "id" | "created_at" | "status">,
+): Promise<Merchant> {
+  const response = await fetch(BASE_URL + "/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    const error = new Error("Erro ao criar merchant") as Error & {
+      status: number;
+      body: unknown;
+    };
+    error.status = response.status;
+    error.body = body;
+    throw error;
+  }
+
+  return response.json();
+}
+
+export function useCreateMerchant() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: createMerchant,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["merchants"] });
+    },
   });
 }
 
