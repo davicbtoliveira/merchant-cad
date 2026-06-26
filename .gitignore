@@ -4,4 +4,8 @@ __pycache__/
 db.sqlite3
 .coverage
 .pytest_cache/
+frontend/node_modules/
+frontend/dist/
+frontend/*.tsbuildinfo
+frontend/public/mockServiceWorker.js
 
