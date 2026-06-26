@@ -47,6 +47,7 @@ PATCH /api/merchants/{id}/
 POST /api/merchants/{id}/submit-for-analysis/
 POST /api/merchants/{id}/approve/
 POST /api/merchants/{id}/reject/
+POST /api/merchants/{id}/block/
 GET  /api/merchants/{id}/timeline/
 ```
 
@@ -68,6 +69,12 @@ evento na timeline com a mensagem `Merchant aprovado` e retorna o merchant atual
 `pending_analysis` para `rejected`, cria um evento na timeline com a mensagem
 `Merchant rejeitado: <motivo>` e retorna o merchant atualizado. Rejeição sem `reason`, ou com `reason`
 vazio, retorna `400 Bad Request`. Rejeição em status inválido retorna erro de negócio com
+`422 Unprocessable Entity`.
+
+`POST /api/merchants/{id}/block/` aceita um payload com `reason` não vazio, move um merchant de
+`approved` para `blocked`, cria um evento na timeline com a mensagem
+`Merchant bloqueado: <motivo>` e retorna o merchant atualizado. Bloqueio sem `reason`, ou com `reason`
+vazio, retorna `400 Bad Request`. Bloqueio em status inválido retorna erro de negócio com
 `422 Unprocessable Entity`.
 
 `GET /api/merchants/{id}/timeline/` retorna os eventos daquele merchant em ordem cronológica.
