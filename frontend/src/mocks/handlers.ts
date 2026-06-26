@@ -62,6 +62,56 @@ export const mockTimeline: Record<number, TimelineEvent[]> = {
 };
 
 let nextId = 4;
+let nextEventId = 5;
+
+export function resetMockData() {
+  mockMerchants.length = 0;
+  mockMerchants.push(
+    {
+      id: 1,
+      cnpj: "11222333000181",
+      legal_name: "Empresa Exemplo Ltda",
+      trade_name: "Exemplo",
+      contact_email: "contato@exemplo.com",
+      phone: "11999999999",
+      created_at: "2026-06-01T10:00:00Z",
+      status: "draft",
+    },
+    {
+      id: 2,
+      cnpj: "55666777000199",
+      legal_name: "Comércio ABC S.A.",
+      trade_name: "ABC Comércio",
+      contact_email: "abc@comercio.com",
+      phone: "11888888888",
+      created_at: "2026-06-15T14:30:00Z",
+      status: "approved",
+    },
+    {
+      id: 3,
+      cnpj: "99888777000111",
+      legal_name: "Serviços XYZ Ltda",
+      trade_name: "XYZ Serviços",
+      contact_email: "contato@xyz.com",
+      phone: "11777777777",
+      created_at: "2026-06-20T09:00:00Z",
+      status: "pending_analysis",
+    },
+  );
+
+  delete mockTimeline[1];
+  mockTimeline[2] = [
+    { id: 1, message: "Merchant criado", created_at: "2026-06-15T14:30:00Z" },
+    { id: 2, message: "Merchant enviado para análise", created_at: "2026-06-16T09:00:00Z" },
+    { id: 3, message: "Merchant aprovado", created_at: "2026-06-17T11:00:00Z" },
+  ];
+  mockTimeline[3] = [
+    { id: 4, message: "Merchant criado", created_at: "2026-06-20T09:00:00Z" },
+  ];
+
+  nextId = 4;
+  nextEventId = 5;
+}
 
 export const handlers = [
   http.get("/api/merchants", ({ request }) => {
@@ -148,6 +198,108 @@ export const handlers = [
     mockMerchants.push(newMerchant);
 
     return HttpResponse.json(newMerchant, { status: 201 });
+  }),
+
+  http.post("/api/merchants/:id/submit-for-analysis", ({ params }) => {
+    const id = Number(params.id);
+    const merchant = mockMerchants.find((m) => m.id === id);
+
+    if (!merchant) {
+      return HttpResponse.json({ detail: "Não encontrado." }, { status: 404 });
+    }
+
+    if (merchant.status !== "draft") {
+      return HttpResponse.json(
+        { status: ["Merchant can only be submitted for analysis from draft."] },
+        { status: 422 },
+      );
+    }
+
+    merchant.status = "pending_analysis";
+    (mockTimeline[id] ??= []).push({
+      id: nextEventId++,
+      message: "Merchant enviado para análise",
+      created_at: new Date().toISOString(),
+    });
+
+    return HttpResponse.json({ ...merchant });
+  }),
+
+  http.post("/api/merchants/:id/approve", ({ params }) => {
+    const id = Number(params.id);
+    const merchant = mockMerchants.find((m) => m.id === id);
+
+    if (!merchant) {
+      return HttpResponse.json({ detail: "Não encontrado." }, { status: 404 });
+    }
+
+    if (merchant.status !== "pending_analysis") {
+      return HttpResponse.json(
+        { status: ["Merchant can only be approved from pending_analysis."] },
+        { status: 422 },
+      );
+    }
+
+    merchant.status = "approved";
+    (mockTimeline[id] ??= []).push({
+      id: nextEventId++,
+      message: "Merchant aprovado",
+      created_at: new Date().toISOString(),
+    });
+
+    return HttpResponse.json({ ...merchant });
+  }),
+
+  http.post("/api/merchants/:id/reject", async ({ params, request }) => {
+    const id = Number(params.id);
+    const merchant = mockMerchants.find((m) => m.id === id);
+    const body = (await request.json()) as { reason?: string };
+
+    if (!merchant) {
+      return HttpResponse.json({ detail: "Não encontrado." }, { status: 404 });
+    }
+
+    if (merchant.status !== "pending_analysis") {
+      return HttpResponse.json(
+        { status: ["Merchant can only be rejected from pending_analysis."] },
+        { status: 422 },
+      );
+    }
+
+    merchant.status = "rejected";
+    (mockTimeline[id] ??= []).push({
+      id: nextEventId++,
+      message: `Merchant rejeitado: ${body.reason ?? ""}`,
+      created_at: new Date().toISOString(),
+    });
+
+    return HttpResponse.json({ ...merchant });
+  }),
+
+  http.post("/api/merchants/:id/block", async ({ params, request }) => {
+    const id = Number(params.id);
+    const merchant = mockMerchants.find((m) => m.id === id);
+    const body = (await request.json()) as { reason?: string };
+
+    if (!merchant) {
+      return HttpResponse.json({ detail: "Não encontrado." }, { status: 404 });
+    }
+
+    if (merchant.status !== "approved") {
+      return HttpResponse.json(
+        { status: ["Merchant can only be blocked from approved."] },
+        { status: 422 },
+      );
+    }
+
+    merchant.status = "blocked";
+    (mockTimeline[id] ??= []).push({
+      id: nextEventId++,
+      message: `Merchant bloqueado: ${body.reason ?? ""}`,
+      created_at: new Date().toISOString(),
+    });
+
+    return HttpResponse.json({ ...merchant });
   }),
 
   http.get("/api/merchants/:id/timeline", ({ params }) => {

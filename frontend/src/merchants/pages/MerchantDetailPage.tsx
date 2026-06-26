@@ -8,6 +8,7 @@ import {
   useMerchant,
 } from "../api/merchants";
 import { MerchantStatusBadge } from "../components/MerchantStatusBadge";
+import { MerchantActions } from "../components/MerchantActions";
 import { MerchantTimeline } from "../components/MerchantTimeline";
 
 export function MerchantDetailPage() {
@@ -94,9 +95,15 @@ export function MerchantDetailPage() {
             </h1>
             <MerchantStatusBadge status={merchant.status} />
           </div>
-          <Button onClick={() => navigate(`/merchants/${merchant.id}/edit`)}>
-            Editar
-          </Button>
+          {merchant.status === "draft" && (
+            <Button onClick={() => navigate(`/merchants/${merchant.id}/edit`)}>
+              Editar
+            </Button>
+          )}
+        </div>
+
+        <div className="mb-6">
+          <MerchantActions merchant={merchant} />
         </div>
 
         <dl className="grid grid-cols-1 gap-4 sm:grid-cols-2">
