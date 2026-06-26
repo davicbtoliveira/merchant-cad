@@ -78,3 +78,26 @@ vazio, retorna `400 Bad Request`. Bloqueio em status inválido retorna erro de n
 `422 Unprocessable Entity`.
 
 `GET /api/merchants/{id}/timeline/` retorna os eventos daquele merchant em ordem cronológica.
+
+## Decisões técnicas
+
+- **Django + Django REST Framework** — escolha do ecossistema Django pela produtividade, ORM embutido e suporte a migrations, combinado com DRF para expor a API REST de forma consistente.
+- **SQLite como banco inicial** — elimina dependência externa de banco de dados; migrations funcionam com `python manage.py migrate` sem configurar PostgreSQL ou Docker.
+- **Sem autenticação** — fora do escopo do desafio; a API não exige tokens, sessões nem permissões.
+- **Status controlado por endpoints explícitos** — cada transição de status tem seu próprio endpoint (`submit-for-analysis`, `approve`, `reject`, `block`), validando regras de negócio e gerando eventos na timeline. O campo `status` é somente leitura nas operações comuns.
+- **Timeline separada do Merchant** — eventos são armazenados em modelo próprio (`MerchantEvent`) e expostos em endpoint dedicado, mantendo o detalhe do Merchant simples.
+- **CNPJ normalizado** — o valor enviado é limpo de pontuação e salvo apenas com dígitos, garantindo unicidade independente da formatação de entrada.
+- **Camada de serviços** — regras de transição ficam em `services.py`, mantendo as views finas e as regras testáveis independentemente do contrato HTTP.
+- **Transições inválidas retornam `422 Unprocessable Entity`** — separa erros de negócio de erros de validação de formulário (`400`).
+
+Essas decisões estão documentadas em detalhe em `docs/ADRs/`.
+
+## Fora do escopo inicial
+
+- Autenticação e autorização.
+- Frontend (SPA ou renderizado no servidor).
+- Docker e PostgreSQL (substituíveis sem alterar o código da aplicação).
+- Validação formal de CNPJ (dígitos verificadores e tamanho exato).
+- Integração com API pública de CNPJ (gov.br).
+- Paginação, ordenação avançada e busca textual.
+- Painel administrativo customizado do Django.
