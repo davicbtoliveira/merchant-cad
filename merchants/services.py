@@ -7,6 +7,7 @@ SUBMIT_FOR_ANALYSIS_MESSAGE = "Merchant enviado para análise"
 APPROVE_MERCHANT_MESSAGE = "Merchant aprovado"
 REJECT_MERCHANT_MESSAGE = "Merchant rejeitado: {}"
 BLOCK_MERCHANT_MESSAGE = "Merchant bloqueado: {}"
+REOPEN_MERCHANT_MESSAGE = "Merchant reaberto: {}"
 
 
 def ensure_can_update_registration_data(merchant: Merchant) -> None:
@@ -99,6 +100,27 @@ def block_merchant(merchant: Merchant, reason: str) -> Merchant:
     MerchantEvent.objects.create(
         merchant=merchant,
         message=BLOCK_MERCHANT_MESSAGE.format(reason),
+    )
+
+    return merchant
+
+
+def ensure_can_reopen_merchant(merchant: Merchant) -> None:
+    if merchant.status != Merchant.Status.REJECTED:
+        raise BusinessRuleViolation(
+            {"status": "Merchant can only be reopened from rejected."}
+        )
+
+
+@transaction.atomic
+def reopen_merchant(merchant: Merchant, reason: str) -> Merchant:
+    ensure_can_reopen_merchant(merchant)
+
+    merchant.status = Merchant.Status.DRAFT
+    merchant.save(update_fields=["status"])
+    MerchantEvent.objects.create(
+        merchant=merchant,
+        message=REOPEN_MERCHANT_MESSAGE.format(reason),
     )
 
     return merchant
