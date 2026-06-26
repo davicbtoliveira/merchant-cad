@@ -23,6 +23,41 @@ python manage.py runserver
 python manage.py test
 ```
 
+## Docker (PostgreSQL)
+
+Opcional — para rodar a aplicação com PostgreSQL via Docker Compose:
+
+```bash
+# Construir a imagem da aplicação
+docker compose build
+
+# Subir aplicação e banco
+docker compose up -d
+
+# Rodar migrations contra PostgreSQL
+docker compose run --rm app python manage.py migrate
+
+# Rodar testes no container
+docker compose run --rm app python manage.py test
+
+# Acessar a API
+curl http://localhost:8000/api/merchants/
+
+# Parar os containers
+docker compose down
+```
+
+O banco PostgreSQL persiste os dados em um volume nomeado (`postgres_data`).
+Para descartar o volume e recomeçar:
+
+```bash
+docker compose down -v
+```
+
+> A escolha do banco é feita por ambiente: sem variáveis `POSTGRES_*`, o Django
+> usa SQLite local. Com `POSTGRES_DB` definida (como no Compose acima), usa
+> PostgreSQL. Nenhuma regra de negócio muda entre os bancos.
+
 ## Campos da API
 
 A API usa nomes de campos em inglês:
@@ -82,7 +117,8 @@ vazio, retorna `400 Bad Request`. Bloqueio em status inválido retorna erro de n
 ## Decisões técnicas
 
 - **Django + Django REST Framework** — escolha do ecossistema Django pela produtividade, ORM embutido e suporte a migrations, combinado com DRF para expor a API REST de forma consistente.
-- **SQLite como banco inicial** — elimina dependência externa de banco de dados; migrations funcionam com `python manage.py migrate` sem configurar PostgreSQL ou Docker.
+- **SQLite como banco padrão** — elimina dependência externa de banco de dados no caminho local; migrations funcionam com `python manage.py migrate` sem configurar PostgreSQL ou Docker.
+- **PostgreSQL via Docker como opção** — ao definir `POSTGRES_DB` e variáveis relacionadas, a aplicação conecta em PostgreSQL; o ambiente containerizado demonstra maturidade operacional sem tornar Docker obrigatório.
 - **Sem autenticação** — fora do escopo do desafio; a API não exige tokens, sessões nem permissões.
 - **Status controlado por endpoints explícitos** — cada transição de status tem seu próprio endpoint (`submit-for-analysis`, `approve`, `reject`, `block`), validando regras de negócio e gerando eventos na timeline. O campo `status` é somente leitura nas operações comuns.
 - **Timeline separada do Merchant** — eventos são armazenados em modelo próprio (`MerchantEvent`) e expostos em endpoint dedicado, mantendo o detalhe do Merchant simples.
@@ -96,7 +132,6 @@ Essas decisões estão documentadas em detalhe em `docs/ADRs/`.
 
 - Autenticação e autorização.
 - Frontend (SPA ou renderizado no servidor).
-- Docker e PostgreSQL (substituíveis sem alterar o código da aplicação).
 - Validação formal de CNPJ (dígitos verificadores e tamanho exato).
 - Integração com API pública de CNPJ (gov.br).
 - Paginação, ordenação avançada e busca textual.
