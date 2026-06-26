@@ -15,6 +15,7 @@ interface MerchantFormProps {
   defaultValues?: Partial<MerchantFormValues>;
   isSubmitting?: boolean;
   serverErrors?: Record<string, string>;
+  generalError?: string;
 }
 
 function formatCnpjDisplay(value: string): string {
@@ -33,6 +34,7 @@ export function MerchantForm({
   defaultValues = {},
   isSubmitting = false,
   serverErrors = {},
+  generalError,
 }: MerchantFormProps) {
   const {
     control,
@@ -72,6 +74,11 @@ export function MerchantForm({
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+      {generalError && (
+        <div className="rounded-md border border-red-200 bg-red-50 p-3">
+          <p className="text-sm text-red-700">{generalError}</p>
+        </div>
+      )}
       <Input
         label="CNPJ"
         placeholder="00.000.000/0000-00"

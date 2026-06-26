@@ -122,6 +122,47 @@ export function useCreateMerchant() {
   });
 }
 
+export async function updateMerchant(
+  id: number,
+  data: Partial<Omit<Merchant, "id" | "created_at" | "status">>,
+): Promise<Merchant> {
+  const response = await fetch(`${BASE_URL}/${id}/`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+
+  if (response.status === 404) {
+    throw new Error("Merchant não encontrado");
+  }
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    const error = new Error("Erro ao atualizar merchant") as Error & {
+      status: number;
+      body: unknown;
+    };
+    error.status = response.status;
+    error.body = body;
+    throw error;
+  }
+
+  return response.json();
+}
+
+export function useUpdateMerchant() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Parameters<typeof updateMerchant>[1] }) =>
+      updateMerchant(id, data),
+    onSuccess: (merchant) => {
+      queryClient.invalidateQueries({ queryKey: ["merchants"] });
+      queryClient.invalidateQueries({ queryKey: ["merchant", merchant.id] });
+    },
+  });
+}
+
 export function formatCnpj(cnpj: string): string {
   const digits = cnpj.replace(/\D/g, "");
   if (digits.length !== 14) return cnpj;
