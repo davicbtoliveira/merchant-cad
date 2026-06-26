@@ -194,10 +194,68 @@ ordem cronológica.
 
 Essas decisões estão documentadas em detalhe em `docs/ADRs/`.
 
+---
+
+## Frontend React
+
+O frontend é uma SPA em React + Vite que consome a API REST de Merchants.
+
+### Pré-requisitos
+
+- Node.js 20+
+
+### Execução local
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+O frontend fica disponível em `http://localhost:5173/`. O Vite faz proxy das
+chamadas `/api/` para `http://localhost:8000/` (Django rodando localmente).
+
+### Execução via Docker Compose
+
+O frontend já está incluído no `docker-compose.yml`. Para subir tudo:
+
+```bash
+docker compose build
+docker compose up -d
+```
+
+- Frontend: `http://localhost/` (servido por nginx na porta 80)
+- API: `http://localhost:8000/api/merchants/`
+
+### Testes unitários e de integração
+
+```bash
+cd frontend
+npm test
+```
+
+### Testes E2E (Playwright)
+
+```bash
+# Requer backend rodando (local ou Docker)
+cd frontend
+npm run test:e2e
+```
+
+### Mapa de rotas
+
+| Caminho | Página |
+|---|---|
+| `/merchants` | Lista de merchants com filtro por status |
+| `/merchants/new` | Criar novo merchant |
+| `/merchants/:id` | Detalhe do merchant + timeline + ações de transição |
+| `/merchants/:id/edit` | Editar dados cadastrais (apenas em draft) |
+
+---
+
 ## Fora do escopo inicial
 
 - Autenticação e autorização.
-- Frontend (SPA ou renderizado no servidor).
 - Validação formal de CNPJ (dígitos verificadores e tamanho exato).
 - Integração com API pública de CNPJ (gov.br).
 - Paginação, ordenação avançada e busca textual.

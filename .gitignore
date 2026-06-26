@@ -9,4 +9,6 @@ frontend/dist/
 frontend/.vite/
 frontend/*.tsbuildinfo
 frontend/public/mockServiceWorker.js
+frontend/test-results/
+frontend/playwright-report/
 
