@@ -5,6 +5,7 @@ from merchants.models import Merchant, MerchantEvent
 
 SUBMIT_FOR_ANALYSIS_MESSAGE = "Merchant enviado para análise"
 APPROVE_MERCHANT_MESSAGE = "Merchant aprovado"
+REJECT_MERCHANT_MESSAGE = "Merchant rejeitado: {}"
 
 
 def ensure_can_update_registration_data(merchant: Merchant) -> None:
@@ -55,6 +56,27 @@ def approve_merchant(merchant: Merchant) -> Merchant:
     MerchantEvent.objects.create(
         merchant=merchant,
         message=APPROVE_MERCHANT_MESSAGE,
+    )
+
+    return merchant
+
+
+def ensure_can_reject_merchant(merchant: Merchant) -> None:
+    if merchant.status != Merchant.Status.PENDING_ANALYSIS:
+        raise BusinessRuleViolation(
+            {"status": "Merchant can only be rejected from pending_analysis."}
+        )
+
+
+@transaction.atomic
+def reject_merchant(merchant: Merchant, reason: str) -> Merchant:
+    ensure_can_reject_merchant(merchant)
+
+    merchant.status = Merchant.Status.REJECTED
+    merchant.save(update_fields=["status"])
+    MerchantEvent.objects.create(
+        merchant=merchant,
+        message=REJECT_MERCHANT_MESSAGE.format(reason),
     )
 
     return merchant

@@ -4,7 +4,11 @@ from rest_framework.response import Response
 
 from merchants import services
 from merchants.models import Merchant
-from merchants.serializers import MerchantEventSerializer, MerchantSerializer
+from merchants.serializers import (
+    MerchantEventSerializer,
+    MerchantRejectSerializer,
+    MerchantSerializer,
+)
 
 
 class MerchantViewSet(
@@ -47,6 +51,19 @@ class MerchantViewSet(
         serializer = self.get_serializer(merchant)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"])
+    def reject(self, request, *args, **kwargs):
+        serializer = MerchantRejectSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        merchant = services.reject_merchant(
+            self.get_object(),
+            reason=serializer.validated_data["reason"],
+        )
+        response_serializer = self.get_serializer(merchant)
+
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["get"])
     def timeline(self, request, *args, **kwargs):

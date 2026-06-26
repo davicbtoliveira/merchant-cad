@@ -44,3 +44,7 @@ class MerchantEventSerializer(serializers.ModelSerializer):
         model = MerchantEvent
         fields = ["id", "message", "created_at"]
         read_only_fields = fields
+
+
+class MerchantRejectSerializer(serializers.Serializer):
+    reason = serializers.CharField(allow_blank=False, allow_null=False)

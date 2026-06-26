@@ -1,8 +1,8 @@
 # Merchant CAD
 
-Backend API for registering and reviewing merchants.
+API backend para cadastro e análise de merchants.
 
-## Setup
+## Configuração
 
 ```bash
 python -m venv .venv
@@ -11,30 +11,30 @@ python -m pip install -r requirements.txt
 python manage.py migrate
 ```
 
-## Run
+## Execução
 
 ```bash
 python manage.py runserver
 ```
 
-## Test
+## Testes
 
 ```bash
 python manage.py test
 ```
 
-## API fields
+## Campos da API
 
-The API uses English field names:
+A API usa nomes de campos em inglês:
 
 ```text
-razao social    -> legal_name
+razão social    -> legal_name
 nome fantasia   -> trade_name
 e-mail contato  -> contact_email
 telefone        -> phone
 ```
 
-`cnpj`, `legal_name`, and `contact_email` are required. `trade_name` and `phone` are optional.
+`cnpj`, `legal_name` e `contact_email` são obrigatórios. `trade_name` e `phone` são opcionais.
 
 ## Endpoints
 
@@ -46,17 +46,28 @@ GET  /api/merchants/{id}/
 PATCH /api/merchants/{id}/
 POST /api/merchants/{id}/submit-for-analysis/
 POST /api/merchants/{id}/approve/
+POST /api/merchants/{id}/reject/
 GET  /api/merchants/{id}/timeline/
 ```
 
-New merchants start with status `draft`. CNPJ input may include punctuation, but is stored with digits only.
-Merchant list and detail responses include only the public Merchant fields, without embedded timeline data.
+Novos merchants começam com status `draft`. O CNPJ de entrada pode incluir pontuação, mas é salvo apenas
+com dígitos. As respostas de listagem e detalhe incluem apenas os campos públicos do Merchant, sem dados
+da timeline embutidos.
 
-Registration data can be updated only while a merchant is in `draft`. The `status` field is read-only in
-regular create and update operations; workflow changes use explicit action endpoints.
+Dados cadastrais só podem ser atualizados enquanto o merchant está em `draft`. O campo `status` é somente
+leitura nas operações comuns de criação e atualização; mudanças de fluxo usam endpoints de ação explícitos.
 
-`POST /api/merchants/{id}/submit-for-analysis/` moves a merchant from `draft` to `pending_analysis`,
-creates the first timeline event with the message `Merchant enviado para análise`, and returns the updated
-merchant. `POST /api/merchants/{id}/approve/` moves a merchant from `pending_analysis` to `approved`,
-creates a timeline event with the message `Merchant aprovado`, and returns the updated merchant.
-`GET /api/merchants/{id}/timeline/` returns that merchant's events in chronological order.
+`POST /api/merchants/{id}/submit-for-analysis/` move um merchant de `draft` para `pending_analysis`,
+cria o primeiro evento da timeline com a mensagem `Merchant enviado para análise` e retorna o merchant
+atualizado.
+
+`POST /api/merchants/{id}/approve/` move um merchant de `pending_analysis` para `approved`, cria um
+evento na timeline com a mensagem `Merchant aprovado` e retorna o merchant atualizado.
+
+`POST /api/merchants/{id}/reject/` aceita um payload com `reason` não vazio, move um merchant de
+`pending_analysis` para `rejected`, cria um evento na timeline com a mensagem
+`Merchant rejeitado: <motivo>` e retorna o merchant atualizado. Rejeição sem `reason`, ou com `reason`
+vazio, retorna `400 Bad Request`. Rejeição em status inválido retorna erro de negócio com
+`422 Unprocessable Entity`.
+
+`GET /api/merchants/{id}/timeline/` retorna os eventos daquele merchant em ordem cronológica.
