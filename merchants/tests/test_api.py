@@ -7,6 +7,7 @@ from merchants.services import (
     APPROVE_MERCHANT_MESSAGE,
     BLOCK_MERCHANT_MESSAGE,
     REJECT_MERCHANT_MESSAGE,
+    REOPEN_MERCHANT_MESSAGE,
     SUBMIT_FOR_ANALYSIS_MESSAGE,
 )
 
@@ -602,3 +603,250 @@ class MerchantTimelineTests(MerchantApiTestCase):
         for event in response.data:
             self.assertEqual(set(event.keys()), {"id", "message", "created_at"})
             self.assertIn("created_at", event)
+
+
+class MerchantReopenTests(MerchantApiTestCase):
+    def _create_rejected_merchant(self):
+        created = self.create_merchant()
+        self.client.post(
+            reverse("merchant-submit-for-analysis", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+        self.client.post(
+            reverse("merchant-reject", kwargs={"pk": created.data["id"]}),
+            {"reason": "Documentação inconsistente"},
+            format="json",
+        )
+        return created
+
+    def test_reopens_rejected_merchant_and_creates_event(self):
+        created = self._create_rejected_merchant()
+
+        response = self.client.post(
+            reverse("merchant-reopen", kwargs={"pk": created.data["id"]}),
+            {"reason": "Merchant regularizou documentação"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "draft")
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.status, Merchant.Status.DRAFT)
+
+        timeline = self.client.get(
+            reverse("merchant-timeline", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+        self.assertEqual(timeline.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [event["message"] for event in timeline.data],
+            [
+                SUBMIT_FOR_ANALYSIS_MESSAGE,
+                REJECT_MERCHANT_MESSAGE.format("Documentação inconsistente"),
+                REOPEN_MERCHANT_MESSAGE.format("Merchant regularizou documentação"),
+            ],
+        )
+
+    def test_does_not_alter_registration_data_on_reopen(self):
+        created = self.create_merchant(
+            cnpj="98.765.432/0001-10",
+            legal_name="Beta Comercio LTDA",
+            contact_email="ops@beta.example",
+        )
+        self.client.post(
+            reverse("merchant-submit-for-analysis", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+        self.client.post(
+            reverse("merchant-reject", kwargs={"pk": created.data["id"]}),
+            {"reason": "Revisão"},
+            format="json",
+        )
+
+        response = self.client.post(
+            reverse("merchant-reopen", kwargs={"pk": created.data["id"]}),
+            {"reason": "Dados revisados"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["legal_name"], "Beta Comercio LTDA")
+        self.assertEqual(response.data["cnpj"], "98765432000110")
+
+    def test_requires_reason_when_reopening(self):
+        created = self._create_rejected_merchant()
+
+        response = self.client.post(
+            reverse("merchant-reopen", kwargs={"pk": created.data["id"]}),
+            {},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("reason", response.data)
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.status, Merchant.Status.REJECTED)
+        self.assertEqual(MerchantEvent.objects.count(), 2)
+
+    def test_rejects_empty_reason_when_reopening(self):
+        created = self._create_rejected_merchant()
+
+        response = self.client.post(
+            reverse("merchant-reopen", kwargs={"pk": created.data["id"]}),
+            {"reason": ""},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("reason", response.data)
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.status, Merchant.Status.REJECTED)
+        self.assertEqual(MerchantEvent.objects.count(), 2)
+
+    def test_does_not_reopen_merchant_in_draft(self):
+        created = self.create_merchant()
+
+        response = self.client.post(
+            reverse("merchant-reopen", kwargs={"pk": created.data["id"]}),
+            {"reason": "Qualquer motivo"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+        self.assertIn("status", response.data)
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.status, Merchant.Status.DRAFT)
+        self.assertEqual(MerchantEvent.objects.count(), 0)
+
+    def test_does_not_reopen_merchant_in_pending_analysis(self):
+        created = self.create_merchant()
+        self.client.post(
+            reverse("merchant-submit-for-analysis", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+
+        response = self.client.post(
+            reverse("merchant-reopen", kwargs={"pk": created.data["id"]}),
+            {"reason": "Qualquer motivo"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+        self.assertIn("status", response.data)
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.status, Merchant.Status.PENDING_ANALYSIS)
+        self.assertEqual(MerchantEvent.objects.count(), 1)
+
+    def test_does_not_reopen_merchant_in_approved(self):
+        created = self.create_merchant()
+        self.client.post(
+            reverse("merchant-submit-for-analysis", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+        self.client.post(
+            reverse("merchant-approve", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+
+        response = self.client.post(
+            reverse("merchant-reopen", kwargs={"pk": created.data["id"]}),
+            {"reason": "Qualquer motivo"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+        self.assertIn("status", response.data)
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.status, Merchant.Status.APPROVED)
+        self.assertEqual(MerchantEvent.objects.count(), 2)
+
+    def test_does_not_reopen_merchant_in_blocked(self):
+        created = self.create_merchant()
+        self.client.post(
+            reverse("merchant-submit-for-analysis", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+        self.client.post(
+            reverse("merchant-approve", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+        self.client.post(
+            reverse("merchant-block", kwargs={"pk": created.data["id"]}),
+            {"reason": "Fraude"},
+            format="json",
+        )
+
+        response = self.client.post(
+            reverse("merchant-reopen", kwargs={"pk": created.data["id"]}),
+            {"reason": "Qualquer motivo"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+        self.assertIn("status", response.data)
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.status, Merchant.Status.BLOCKED)
+        self.assertEqual(MerchantEvent.objects.count(), 3)
+
+    def test_reopened_merchant_can_update_registration_data(self):
+        created = self._create_rejected_merchant()
+        self.client.post(
+            reverse("merchant-reopen", kwargs={"pk": created.data["id"]}),
+            {"reason": "Dados revisados"},
+            format="json",
+        )
+
+        response = self.client.patch(
+            reverse("merchant-detail", kwargs={"pk": created.data["id"]}),
+            {
+                "legal_name": "Acme Solucoes Financeiras LTDA",
+                "trade_name": "Acme Solucoes",
+                "contact_email": "analise@acme.example",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data["legal_name"], "Acme Solucoes Financeiras LTDA"
+        )
+        self.assertEqual(response.data["trade_name"], "Acme Solucoes")
+        self.assertEqual(response.data["contact_email"], "analise@acme.example")
+        self.assertEqual(response.data["status"], "draft")
+
+    def test_full_reject_reopen_edit_resubmit_flow(self):
+        created = self._create_rejected_merchant()
+        self.client.post(
+            reverse("merchant-reopen", kwargs={"pk": created.data["id"]}),
+            {"reason": "Dados revisados"},
+            format="json",
+        )
+        self.client.patch(
+            reverse("merchant-detail", kwargs={"pk": created.data["id"]}),
+            {"legal_name": "Acme Solucoes Financeiras LTDA"},
+            format="json",
+        )
+
+        response = self.client.post(
+            reverse("merchant-submit-for-analysis", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "pending_analysis")
+        self.assertEqual(
+            response.data["legal_name"], "Acme Solucoes Financeiras LTDA"
+        )
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.status, Merchant.Status.PENDING_ANALYSIS)
+        self.assertEqual(
+            merchant.legal_name, "Acme Solucoes Financeiras LTDA"
+        )

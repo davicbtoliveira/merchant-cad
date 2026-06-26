@@ -78,6 +78,19 @@ class MerchantViewSet(
 
         return Response(response_serializer.data, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=["post"])
+    def reopen(self, request, *args, **kwargs):
+        serializer = MerchantRejectSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        merchant = services.reopen_merchant(
+            self.get_object(),
+            reason=serializer.validated_data["reason"],
+        )
+        response_serializer = self.get_serializer(merchant)
+
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=["get"])
     def timeline(self, request, *args, **kwargs):
         merchant = self.get_object()
