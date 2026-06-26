@@ -77,7 +77,7 @@ export function MerchantForm({
         placeholder="00.000.000/0000-00"
         value={formatCnpjDisplay(cnpjField.value)}
         onChange={(e) => {
-          const raw = e.target.value.replace(/\D/g, "");
+          const raw = e.target.value.replace(/\D/g, "").slice(0, 14);
           cnpjField.onChange(raw);
         }}
         onBlur={cnpjField.onBlur}
