@@ -6,6 +6,7 @@ db.sqlite3
 .pytest_cache/
 frontend/node_modules/
 frontend/dist/
+frontend/.vite/
 frontend/*.tsbuildinfo
 frontend/public/mockServiceWorker.js
 

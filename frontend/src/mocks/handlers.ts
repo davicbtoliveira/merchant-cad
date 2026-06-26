@@ -1,5 +1,5 @@
 import { http, HttpResponse } from "msw";
-import type { Merchant } from "../merchants/api/merchants";
+import type { Merchant, TimelineEvent } from "../merchants/api/merchants";
 
 export const mockMerchants: Merchant[] = [
   {
@@ -34,6 +34,33 @@ export const mockMerchants: Merchant[] = [
   },
 ];
 
+export const mockTimeline: Record<number, TimelineEvent[]> = {
+  2: [
+    {
+      id: 1,
+      message: "Merchant criado",
+      created_at: "2026-06-15T14:30:00Z",
+    },
+    {
+      id: 2,
+      message: "Merchant enviado para análise",
+      created_at: "2026-06-16T09:00:00Z",
+    },
+    {
+      id: 3,
+      message: "Merchant aprovado",
+      created_at: "2026-06-17T11:00:00Z",
+    },
+  ],
+  3: [
+    {
+      id: 4,
+      message: "Merchant criado",
+      created_at: "2026-06-20T09:00:00Z",
+    },
+  ],
+};
+
 export const handlers = [
   http.get("/api/merchants", ({ request }) => {
     const url = new URL(request.url);
@@ -45,5 +72,23 @@ export const handlers = [
     }
 
     return HttpResponse.json(result);
+  }),
+
+  http.get("/api/merchants/:id", ({ params }) => {
+    const id = Number(params.id);
+    const merchant = mockMerchants.find((m) => m.id === id);
+
+    if (!merchant) {
+      return HttpResponse.json({ detail: "Não encontrado." }, { status: 404 });
+    }
+
+    return HttpResponse.json(merchant);
+  }),
+
+  http.get("/api/merchants/:id/timeline", ({ params }) => {
+    const id = Number(params.id);
+    const events = mockTimeline[id] ?? [];
+
+    return HttpResponse.json(events);
   }),
 ];
