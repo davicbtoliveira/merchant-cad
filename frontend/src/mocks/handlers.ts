@@ -87,6 +87,35 @@ export const handlers = [
     return HttpResponse.json(merchant);
   }),
 
+  http.patch("/api/merchants/:id", async ({ params, request }) => {
+    const id = Number(params.id);
+    const merchant = mockMerchants.find((m) => m.id === id);
+
+    if (!merchant) {
+      return HttpResponse.json({ detail: "Não encontrado." }, { status: 404 });
+    }
+
+    if (merchant.status !== "draft") {
+      return HttpResponse.json(
+        { status: ["Merchant registration data can only be updated while in draft."] },
+        { status: 422 },
+      );
+    }
+
+    const body = (await request.json()) as Record<string, unknown>;
+    const updated = { ...merchant };
+
+    if (typeof body.cnpj === "string") updated.cnpj = body.cnpj;
+    if (typeof body.legal_name === "string") updated.legal_name = body.legal_name;
+    if (typeof body.trade_name === "string") updated.trade_name = body.trade_name;
+    if (typeof body.contact_email === "string") updated.contact_email = body.contact_email;
+    if (typeof body.phone === "string") updated.phone = body.phone;
+
+    Object.assign(merchant, updated);
+
+    return HttpResponse.json(updated);
+  }),
+
   http.post("/api/merchants/", async ({ request }) => {
     const body = (await request.json()) as Record<string, unknown>;
 

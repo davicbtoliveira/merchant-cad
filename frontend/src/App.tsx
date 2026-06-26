@@ -4,6 +4,7 @@ import { Toaster } from "sonner";
 import { MerchantDetailPage } from "./merchants/pages/MerchantDetailPage";
 import { MerchantListPage } from "./merchants/pages/MerchantListPage";
 import { MerchantNewPage } from "./merchants/pages/MerchantNewPage";
+import { MerchantEditPage } from "./merchants/pages/MerchantEditPage";
 
 const queryClient = new QueryClient();
 
@@ -11,6 +12,7 @@ const router = createBrowserRouter([
   { path: "/", element: <Navigate to="/merchants" replace /> },
   { path: "/merchants", element: <MerchantListPage /> },
   { path: "/merchants/new", element: <MerchantNewPage /> },
+  { path: "/merchants/:id/edit", element: <MerchantEditPage /> },
   { path: "/merchants/:id", element: <MerchantDetailPage /> },
 ]);
 
