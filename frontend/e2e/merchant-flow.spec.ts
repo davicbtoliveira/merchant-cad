@@ -1,11 +1,23 @@
 import { test, expect } from "@playwright/test";
 
-test.describe("Merchant full flow", () => {
 function makeUniqueCnpj(prefix: string) {
   const ts = Date.now().toString().slice(-8);
   const digits = `${prefix}${ts.padEnd(12, "0").slice(0, 12)}`;
   return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12, 14)}`;
 }
+
+test.describe("Merchant full flow", () => {
+  const createdIds: number[] = [];
+
+  test.afterAll(async ({ request }) => {
+    for (const id of createdIds) {
+      try {
+        await request.delete(`/api/merchants/${id}/`);
+      } catch {
+        // ignore cleanup failures
+      }
+    }
+  });
 
   const uniqueId = Date.now().toString().slice(-6);
   const cnpj = makeUniqueCnpj("12");
@@ -31,6 +43,7 @@ function makeUniqueCnpj(prefix: string) {
     await page.getByRole("button", { name: "Salvar" }).click();
 
     await expect(page).toHaveURL(/\/merchants\/\d+/);
+    createdIds.push(Number(page.url().match(/\/merchants\/(\d+)/)![1]));
     await expect(page.getByRole("heading", { name: legalName })).toBeVisible();
     await expect(page.getByText("Rascunho", { exact: true })).toBeVisible();
 
@@ -75,6 +88,7 @@ function makeUniqueCnpj(prefix: string) {
     await page.getByLabel("E-mail").fill(`rejeitado${rejectId}@example.com`);
     await page.getByRole("button", { name: "Salvar" }).click();
     await expect(page).toHaveURL(/\/merchants\/\d+/);
+    createdIds.push(Number(page.url().match(/\/merchants\/(\d+)/)![1]));
 
     await page.getByRole("button", { name: "Enviar para análise" }).click();
     await expect(page.getByText("Em análise", { exact: true })).toBeVisible();
@@ -99,6 +113,7 @@ function makeUniqueCnpj(prefix: string) {
     await page.getByLabel("E-mail").fill(`bloqueada${blockId}@example.com`);
     await page.getByRole("button", { name: "Salvar" }).click();
     await expect(page).toHaveURL(/\/merchants\/\d+/);
+    createdIds.push(Number(page.url().match(/\/merchants\/(\d+)/)![1]));
 
     await page.getByRole("button", { name: "Enviar para análise" }).click();
     await expect(page.getByText("Em análise", { exact: true })).toBeVisible();
