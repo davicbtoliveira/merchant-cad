@@ -47,3 +47,23 @@ class DatabaseConfigTests(SimpleTestCase):
                 "PORT": "5432",
             },
         )
+
+    def test_db_name_overrides_sqlite(self):
+        config = database_config({"DB_NAME": "test_db.sqlite3"})
+
+        self.assertEqual(config["ENGINE"], "django.db.backends.sqlite3")
+        self.assertEqual(config["NAME"], BASE_DIR / "test_db.sqlite3")
+
+    def test_db_name_overrides_postgres(self):
+        config = database_config({
+            "DB_NAME": "merchant_cad_test",
+            "POSTGRES_DB": "merchant_cad",
+            "POSTGRES_USER": "merchant_user",
+            "POSTGRES_PASSWORD": "merchant_password",
+            "POSTGRES_HOST": "postgres",
+            "POSTGRES_PORT": "5433",
+        })
+
+        self.assertEqual(config["ENGINE"], "django.db.backends.postgresql")
+        self.assertEqual(config["NAME"], "merchant_cad_test")
+        self.assertEqual(config["USER"], "merchant_user")

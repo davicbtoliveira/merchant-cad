@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 db.sqlite3
+e2e_db.sqlite3
 .coverage
 .pytest_cache/
 frontend/node_modules/
@@ -11,4 +12,4 @@ frontend/*.tsbuildinfo
 frontend/public/mockServiceWorker.js
 frontend/test-results/
 frontend/playwright-report/
-
+node_modules/
