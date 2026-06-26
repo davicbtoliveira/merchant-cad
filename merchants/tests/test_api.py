@@ -3,7 +3,11 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from merchants.models import Merchant, MerchantEvent
-from merchants.services import APPROVE_MERCHANT_MESSAGE, SUBMIT_FOR_ANALYSIS_MESSAGE
+from merchants.services import (
+    APPROVE_MERCHANT_MESSAGE,
+    REJECT_MERCHANT_MESSAGE,
+    SUBMIT_FOR_ANALYSIS_MESSAGE,
+)
 
 
 class MerchantApiTestCase(APITestCase):
@@ -338,6 +342,93 @@ class MerchantWorkflowTests(MerchantApiTestCase):
 
         response = self.client.post(
             reverse("merchant-approve", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_422_UNPROCESSABLE_ENTITY)
+        self.assertIn("status", response.data)
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.status, Merchant.Status.DRAFT)
+        self.assertEqual(MerchantEvent.objects.count(), 0)
+
+
+class MerchantRejectTests(MerchantApiTestCase):
+    def test_rejects_pending_analysis_merchant_and_creates_event(self):
+        created = self.create_merchant()
+        self.client.post(
+            reverse("merchant-submit-for-analysis", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+
+        response = self.client.post(
+            reverse("merchant-reject", kwargs={"pk": created.data["id"]}),
+            {"reason": "Documentação inconsistente"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["status"], "rejected")
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.status, Merchant.Status.REJECTED)
+
+        timeline = self.client.get(
+            reverse("merchant-timeline", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+
+        self.assertEqual(timeline.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            [event["message"] for event in timeline.data],
+            [
+                SUBMIT_FOR_ANALYSIS_MESSAGE,
+                REJECT_MERCHANT_MESSAGE.format("Documentação inconsistente"),
+            ],
+        )
+
+    def test_requires_reason_when_rejecting(self):
+        created = self.create_merchant()
+        self.client.post(
+            reverse("merchant-submit-for-analysis", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+
+        response = self.client.post(
+            reverse("merchant-reject", kwargs={"pk": created.data["id"]}),
+            {},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("reason", response.data)
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.status, Merchant.Status.PENDING_ANALYSIS)
+        self.assertEqual(MerchantEvent.objects.count(), 1)
+
+    def test_rejects_empty_reason(self):
+        created = self.create_merchant()
+        self.client.post(
+            reverse("merchant-submit-for-analysis", kwargs={"pk": created.data["id"]}),
+            format="json",
+        )
+
+        response = self.client.post(
+            reverse("merchant-reject", kwargs={"pk": created.data["id"]}),
+            {"reason": ""},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("reason", response.data)
+
+    def test_does_not_reject_merchant_outside_pending_analysis(self):
+        created = self.create_merchant()
+
+        response = self.client.post(
+            reverse("merchant-reject", kwargs={"pk": created.data["id"]}),
+            {"reason": "Qualquer motivo"},
             format="json",
         )
 
