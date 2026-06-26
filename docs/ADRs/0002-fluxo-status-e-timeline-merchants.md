@@ -27,7 +27,7 @@ As regras de transição ficarão em uma camada simples de serviços. Cada servi
 - `approved` pode ir para `blocked`, com motivo obrigatório.
 - Merchants fora de `draft` não podem ter dados cadastrais alterados.
 
-Transições inválidas retornarão erro de negócio com HTTP `400 Bad Request`.
+Transições inválidas retornarão erro de negócio com HTTP `422 Unprocessable Entity`.
 
 ## Timeline
 
