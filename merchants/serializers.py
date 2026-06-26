@@ -1,10 +1,7 @@
 from rest_framework import serializers
 
 from merchants.models import Merchant, MerchantEvent
-
-
-def normalize_cnpj(value: str) -> str:
-    return "".join(character for character in value if character.isdigit())
+from merchants.validators import CNPJValidator
 
 
 class MerchantSerializer(serializers.ModelSerializer):
@@ -25,9 +22,12 @@ class MerchantSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "status"]
 
     def validate_cnpj(self, value: str) -> str:
-        normalized_cnpj = normalize_cnpj(value)
+        normalized_cnpj = CNPJValidator.normalize(value)
         if not normalized_cnpj:
             raise serializers.ValidationError("This field may not be blank.")
+
+        if not CNPJValidator.validate(normalized_cnpj):
+            raise serializers.ValidationError("Invalid CNPJ.")
 
         merchants = Merchant.objects.filter(cnpj=normalized_cnpj)
         if self.instance is not None:

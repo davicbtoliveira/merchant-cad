@@ -17,7 +17,7 @@ class MerchantApiTestCase(APITestCase):
     def create_merchant(
         self,
         *,
-        cnpj="12.345.678/0001-90",
+        cnpj="11.222.333/0001-81",
         legal_name="Acme Pagamentos LTDA",
         contact_email="ops@acme.example",
     ):
@@ -40,7 +40,7 @@ class MerchantCreationTests(MerchantApiTestCase):
         response = self.client.post(
             reverse("merchant-list"),
             {
-                "cnpj": "12.345.678/0001-90",
+                "cnpj": "11.222.333/0001-81",
                 "legal_name": "Acme Pagamentos LTDA",
                 "trade_name": "Acme Pay",
                 "contact_email": "ops@acme.example",
@@ -50,7 +50,7 @@ class MerchantCreationTests(MerchantApiTestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data["cnpj"], "12345678000190")
+        self.assertEqual(response.data["cnpj"], "11222333000181")
         self.assertEqual(response.data["status"], "draft")
         self.assertEqual(response.data["legal_name"], "Acme Pagamentos LTDA")
         self.assertEqual(response.data["trade_name"], "Acme Pay")
@@ -63,12 +63,12 @@ class MerchantCreationTests(MerchantApiTestCase):
             format="json",
         )
 
-        self.assertEqual(detail.data["cnpj"], "12345678000190")
+        self.assertEqual(detail.data["cnpj"], "11222333000181")
         self.assertEqual(detail.data["status"], "draft")
 
     def test_requires_cnpj_legal_name_and_contact_email(self):
         payload = {
-            "cnpj": "12345678000190",
+            "cnpj": "11222333000181",
             "legal_name": "Acme Pagamentos LTDA",
             "contact_email": "ops@acme.example",
         }
@@ -88,7 +88,7 @@ class MerchantCreationTests(MerchantApiTestCase):
         response = self.client.post(
             reverse("merchant-list"),
             {
-                "cnpj": "12345678000190",
+                "cnpj": "11222333000181",
                 "legal_name": "Acme Pagamentos LTDA",
                 "contact_email": "ops@acme.example",
             },
@@ -103,7 +103,7 @@ class MerchantCreationTests(MerchantApiTestCase):
         first = self.client.post(
             reverse("merchant-list"),
             {
-                "cnpj": "12.345.678/0001-90",
+                "cnpj": "11.222.333/0001-81",
                 "legal_name": "Acme Pagamentos LTDA",
                 "contact_email": "ops@acme.example",
             },
@@ -114,7 +114,7 @@ class MerchantCreationTests(MerchantApiTestCase):
         response = self.client.post(
             reverse("merchant-list"),
             {
-                "cnpj": "12345678000190",
+                "cnpj": "11222333000181",
                 "legal_name": "Outro Merchant LTDA",
                 "contact_email": "ops@outro.example",
             },
@@ -130,7 +130,7 @@ class MerchantReadTests(MerchantApiTestCase):
         created = self.client.post(
             reverse("merchant-list"),
             {
-                "cnpj": "12.345.678/0001-90",
+                "cnpj": "11.222.333/0001-81",
                 "legal_name": "Acme Pagamentos LTDA",
                 "contact_email": "ops@acme.example",
             },
@@ -144,7 +144,7 @@ class MerchantReadTests(MerchantApiTestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["id"], created.data["id"])
-        self.assertEqual(response.data["cnpj"], "12345678000190")
+        self.assertEqual(response.data["cnpj"], "11222333000181")
         self.assertEqual(response.data["legal_name"], "Acme Pagamentos LTDA")
         self.assertEqual(response.data["contact_email"], "ops@acme.example")
         self.assertEqual(response.data["status"], "draft")
@@ -153,7 +153,7 @@ class MerchantReadTests(MerchantApiTestCase):
         first = self.client.post(
             reverse("merchant-list"),
             {
-                "cnpj": "12.345.678/0001-90",
+                "cnpj": "11.222.333/0001-81",
                 "legal_name": "Acme Pagamentos LTDA",
                 "contact_email": "ops@acme.example",
             },
@@ -162,7 +162,7 @@ class MerchantReadTests(MerchantApiTestCase):
         second = self.client.post(
             reverse("merchant-list"),
             {
-                "cnpj": "98.765.432/0001-10",
+                "cnpj": "98.765.432/0001-98",
                 "legal_name": "Beta Comercio LTDA",
                 "contact_email": "ops@beta.example",
             },
@@ -194,9 +194,16 @@ class MerchantReadTests(MerchantApiTestCase):
             self.assertNotIn("timeline", merchant)
 
     def test_filters_merchants_by_status(self):
+        valid_cnpjs = [
+            "12345678000195",
+            "12345678000276",
+            "12345678000357",
+            "12345678000438",
+            "12345678000519",
+        ]
         for index, merchant_status in enumerate(Merchant.Status.values, start=1):
             Merchant.objects.create(
-                cnpj=f"1234567800019{index}",
+                cnpj=valid_cnpjs[index - 1],
                 legal_name=f"Merchant {merchant_status}",
                 contact_email=f"ops-{index}@merchant.example",
                 status=merchant_status,
@@ -567,7 +574,7 @@ class MerchantTimelineTests(MerchantApiTestCase):
     def test_timeline_returns_only_merchant_events_in_chronological_order(self):
         first = self.create_merchant()
         second = self.create_merchant(
-            cnpj="98.765.432/0001-10",
+            cnpj="98.765.432/0001-98",
             legal_name="Beta Comercio LTDA",
             contact_email="ops@beta.example",
         )
@@ -651,7 +658,7 @@ class MerchantReopenTests(MerchantApiTestCase):
 
     def test_does_not_alter_registration_data_on_reopen(self):
         created = self.create_merchant(
-            cnpj="98.765.432/0001-10",
+            cnpj="98.765.432/0001-98",
             legal_name="Beta Comercio LTDA",
             contact_email="ops@beta.example",
         )
@@ -673,7 +680,7 @@ class MerchantReopenTests(MerchantApiTestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["legal_name"], "Beta Comercio LTDA")
-        self.assertEqual(response.data["cnpj"], "98765432000110")
+        self.assertEqual(response.data["cnpj"], "98765432000198")
 
     def test_requires_reason_when_reopening(self):
         created = self._create_rejected_merchant()
@@ -1093,3 +1100,193 @@ class MerchantUnblockTests(MerchantApiTestCase):
                 UNBLOCK_MERCHANT_MESSAGE.format("Segundo desbloqueio"),
             ],
         )
+
+
+class MerchantCnpjValidationTests(MerchantApiTestCase):
+    def test_accepts_numeric_cnpj_with_punctuation(self):
+        response = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": "11.222.333/0001-81",
+                "legal_name": "Numeric Punct LTDA",
+                "contact_email": "numeric@punct.example",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["cnpj"], "11222333000181")
+
+    def test_accepts_alphanumeric_cnpj_with_punctuation_and_uppercases(self):
+        response = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": "AB.345.678/000B-72",
+                "legal_name": "Alpha Numeric LTDA",
+                "contact_email": "alpha@numeric.example",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["cnpj"], "AB345678000B72")
+
+    def test_accepts_lowercase_alphanumeric_cnpj_and_uppercases(self):
+        response = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": "ab.345.678/000b-72",
+                "legal_name": "Lower Alpha LTDA",
+                "contact_email": "lower@alpha.example",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["cnpj"], "AB345678000B72")
+
+    def test_rejects_cnpj_with_wrong_dv1(self):
+        response = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": "11.222.333/0001-71",
+                "legal_name": "Wrong DV1 LTDA",
+                "contact_email": "dv1@wrong.example",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("cnpj", response.data)
+        self.assertEqual(Merchant.objects.count(), 0)
+
+    def test_rejects_cnpj_with_wrong_dv2(self):
+        response = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": "11.222.333/0001-80",
+                "legal_name": "Wrong DV2 LTDA",
+                "contact_email": "dv2@wrong.example",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("cnpj", response.data)
+        self.assertEqual(Merchant.objects.count(), 0)
+
+    def test_rejects_short_cnpj(self):
+        response = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": "1122233300018",
+                "legal_name": "Short CNPJ LTDA",
+                "contact_email": "short@cnpj.example",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("cnpj", response.data)
+
+    def test_rejects_long_cnpj(self):
+        response = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": "112223330001811",
+                "legal_name": "Long CNPJ LTDA",
+                "contact_email": "long@cnpj.example",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("cnpj", response.data)
+
+    def test_rejects_cnpj_with_invalid_character(self):
+        response = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": "11.222.333/0001-8!",
+                "legal_name": "Invalid Char LTDA",
+                "contact_email": "invalid@char.example",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("cnpj", response.data)
+
+    def test_rejects_cnpj_with_all_equal_characters(self):
+        response = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": "00000000000000",
+                "legal_name": "All Zero LTDA",
+                "contact_email": "zero@all.example",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("cnpj", response.data)
+
+    def test_rejects_cnpj_with_letter_in_dv_positions(self):
+        response = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": "AB345678000B7A",
+                "legal_name": "Letter DV LTDA",
+                "contact_email": "letter@dv.example",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("cnpj", response.data)
+
+    def test_patch_in_draft_updates_cnpj_and_normalizes(self):
+        created = self.create_merchant()
+
+        response = self.client.patch(
+            reverse("merchant-detail", kwargs={"pk": created.data["id"]}),
+            {"cnpj": "AB.345.678/000B-72"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["cnpj"], "AB345678000B72")
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.cnpj, "AB345678000B72")
+
+    def test_patch_with_own_cnpj_does_not_flag_duplicate(self):
+        created = self.create_merchant()
+
+        response = self.client.patch(
+            reverse("merchant-detail", kwargs={"pk": created.data["id"]}),
+            {
+                "cnpj": "11.222.333/0001-81",
+                "trade_name": "Acme Trade",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["cnpj"], "11222333000181")
+        self.assertEqual(response.data["trade_name"], "Acme Trade")
+
+    def test_patch_in_draft_with_invalid_cnpj_returns_400(self):
+        created = self.create_merchant()
+
+        response = self.client.patch(
+            reverse("merchant-detail", kwargs={"pk": created.data["id"]}),
+            {"cnpj": "11.222.333/0001-00"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("cnpj", response.data)
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.cnpj, "11222333000181")

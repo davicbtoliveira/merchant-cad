@@ -79,7 +79,7 @@ curl http://localhost:8000/api/merchants/
 # Criar um merchant
 curl -X POST http://localhost:8000/api/merchants/ \
   -H "Content-Type: application/json" \
-  -d '{"cnpj":"12.345.678/0001-90","legal_name":"Acme Pagamentos LTDA","contact_email":"ops@acme.example"}'
+  -d '{"cnpj":"11.222.333/0001-81","legal_name":"Acme Pagamentos LTDA","contact_email":"ops@acme.example"}'
 ```
 
 ### Gerenciar os containers

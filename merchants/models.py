@@ -9,7 +9,7 @@ class Merchant(models.Model):
         REJECTED = "rejected", "Rejected"
         BLOCKED = "blocked", "Blocked"
 
-    cnpj = models.CharField(max_length=32, unique=True)
+    cnpj = models.CharField(max_length=14, unique=True)
     legal_name = models.CharField(max_length=255)
     trade_name = models.CharField(max_length=255, blank=True)
     contact_email = models.EmailField()

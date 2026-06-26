@@ -1,10 +1,23 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Merchant full flow", () => {
-function makeUniqueCnpj(prefix: string) {
+  function makeUniqueCnpj(prefix: string) {
   const ts = Date.now().toString().slice(-8);
   const digits = `${prefix}${ts.padEnd(12, "0").slice(0, 12)}`;
-  return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12, 14)}`;
+  const base12 = digits.slice(0, 12);
+  const w1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  const w2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  const dv = (base: string, weights: number[]) => {
+    const total = base
+      .split("")
+      .reduce((sum, c, i) => sum + (c.charCodeAt(0) - 48) * weights[i], 0);
+    const r = total % 11;
+    return r < 2 ? "0" : String(11 - r);
+  };
+  const d1 = dv(base12, w1);
+  const d2 = dv(base12 + d1, w2);
+  const cnpj = `${base12}${d1}${d2}`;
+  return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(5, 8)}/${cnpj.slice(8, 12)}-${cnpj.slice(12, 14)}`;
 }
 
   const uniqueId = Date.now().toString().slice(-6);
