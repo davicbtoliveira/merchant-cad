@@ -18,6 +18,12 @@ export interface Merchant {
   status: MerchantStatus;
 }
 
+export interface TimelineEvent {
+  id: number;
+  message: string;
+  created_at: string;
+}
+
 const BASE_URL = "/api/merchants";
 
 export async function fetchMerchants(
@@ -35,10 +41,50 @@ export async function fetchMerchants(
   return response.json();
 }
 
+export async function fetchMerchant(id: number): Promise<Merchant> {
+  const response = await fetch(`${BASE_URL}/${id}/`);
+
+  if (response.status === 404) {
+    throw new Error("Merchant não encontrado");
+  }
+
+  if (!response.ok) {
+    throw new Error("Erro ao carregar merchant");
+  }
+
+  return response.json();
+}
+
+export async function fetchTimeline(id: number): Promise<TimelineEvent[]> {
+  const response = await fetch(`${BASE_URL}/${id}/timeline/`);
+
+  if (!response.ok) {
+    throw new Error("Erro ao carregar timeline");
+  }
+
+  return response.json();
+}
+
 export function useMerchants(status?: string | null) {
   return useQuery({
     queryKey: ["merchants", status],
     queryFn: () => fetchMerchants(status),
+  });
+}
+
+export function useMerchant(id: number) {
+  return useQuery({
+    queryKey: ["merchant", id],
+    queryFn: () => fetchMerchant(id),
+    enabled: !Number.isNaN(id),
+  });
+}
+
+export function useTimeline(id: number) {
+  return useQuery({
+    queryKey: ["timeline", id],
+    queryFn: () => fetchTimeline(id),
+    enabled: !Number.isNaN(id),
   });
 }
 
@@ -54,5 +100,16 @@ export function formatDate(dateString: string): string {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
+  });
+}
+
+export function formatDateTime(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
