@@ -1,4 +1,5 @@
-import { useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
+import { Button } from "../../ui/Button";
 import { Select } from "../../ui/Select";
 import { useMerchants } from "../api/merchants";
 import { MerchantTable } from "../components/MerchantTable";
@@ -12,6 +13,7 @@ const statusOptions = [
 ];
 
 export function MerchantListPage() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const statusFilter = searchParams.get("status");
 
@@ -29,6 +31,9 @@ export function MerchantListPage() {
     <div className="mx-auto max-w-5xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">Merchants</h1>
+        <Button onClick={() => navigate("/merchants/new")}>
+          Novo
+        </Button>
       </div>
 
       <div className="mb-4">

@@ -61,6 +61,8 @@ export const mockTimeline: Record<number, TimelineEvent[]> = {
   ],
 };
 
+let nextId = 4;
+
 export const handlers = [
   http.get("/api/merchants", ({ request }) => {
     const url = new URL(request.url);
@@ -83,6 +85,40 @@ export const handlers = [
     }
 
     return HttpResponse.json(merchant);
+  }),
+
+  http.post("/api/merchants/", async ({ request }) => {
+    const body = (await request.json()) as Record<string, unknown>;
+
+    if (!body.cnpj || !body.legal_name || !body.contact_email) {
+      const errors: Record<string, string[]> = {};
+      if (!body.cnpj) errors.cnpj = ["CNPJ é obrigatório"];
+      if (!body.legal_name) errors.legal_name = ["Razão social é obrigatória"];
+      if (!body.contact_email) errors.contact_email = ["E-mail é obrigatório"];
+      return HttpResponse.json(errors, { status: 422 });
+    }
+
+    if (body.cnpj === "00000000000000") {
+      return HttpResponse.json(
+        { cnpj: ["Merchant with this CNPJ already exists."] },
+        { status: 422 },
+      );
+    }
+
+    const newMerchant: Merchant = {
+      id: nextId++,
+      cnpj: body.cnpj as string,
+      legal_name: body.legal_name as string,
+      trade_name: (body.trade_name as string) ?? "",
+      contact_email: body.contact_email as string,
+      phone: (body.phone as string) ?? "",
+      created_at: new Date().toISOString(),
+      status: "draft",
+    };
+
+    mockMerchants.push(newMerchant);
+
+    return HttpResponse.json(newMerchant, { status: 201 });
   }),
 
   http.get("/api/merchants/:id/timeline", ({ params }) => {
