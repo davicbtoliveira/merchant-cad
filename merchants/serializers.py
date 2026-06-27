@@ -22,12 +22,7 @@ class MerchantSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "status"]
 
     def validate_cnpj(self, value: str) -> str:
-        normalized_cnpj = CNPJValidator.normalize(value)
-        if not normalized_cnpj:
-            raise serializers.ValidationError("This field may not be blank.")
-
-        if not CNPJValidator.validate(normalized_cnpj):
-            raise serializers.ValidationError("Invalid CNPJ.")
+        normalized_cnpj = CNPJValidator.validate(value)
 
         merchants = Merchant.objects.filter(cnpj=normalized_cnpj)
         if self.instance is not None:
@@ -39,11 +34,7 @@ class MerchantSerializer(serializers.ModelSerializer):
         return normalized_cnpj
 
     def validate_phone(self, value: str) -> str:
-        if not value:
-            return value
-        if not PhoneValidator.validate(value):
-            raise serializers.ValidationError("Invalid phone.")
-        return value
+        return PhoneValidator.validate(value)
 
 
 class MerchantEventSerializer(serializers.ModelSerializer):

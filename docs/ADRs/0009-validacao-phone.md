@@ -32,7 +32,8 @@ A máscara é apenas apresentação. Ao enviar para a API, o frontend envia apen
 
 ### Implementação
 
-- `MerchantSerializer.validate_phone`: rejeita se vazio em branco é permitido (opcional); se preenchido, valida `^[0-9]{10,11}$`.
+- `PhoneValidator.validate`: permite string vazia (campo opcional), retorna o phone válido ou levanta `rest_framework.exceptions.ValidationError`; se preenchido, valida `^[0-9]{10,11}$`.
+- `MerchantSerializer.validate_phone`: delega para `PhoneValidator.validate`.
 - Frontend (conforme ADR 0005): input com máscara `(DD) xxxx-xxxx` / `(DD) 9xxxx-xxxx`, stripping de não-dígitos antes do POST.
 
 ## Alternativa rejeitada
