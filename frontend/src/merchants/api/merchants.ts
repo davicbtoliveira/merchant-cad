@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { formatCnpjDisplay } from "../utils/cnpj";
 
 export type MerchantStatus =
   | "draft"
@@ -226,10 +227,16 @@ export function useBlockMerchant() {
   return useStatusTransition("block");
 }
 
+export function useReopenMerchant() {
+  return useStatusTransition("reopen");
+}
+
+export function useUnblockMerchant() {
+  return useStatusTransition("unblock");
+}
+
 export function formatCnpj(cnpj: string): string {
-  const digits = cnpj.replace(/\D/g, "");
-  if (digits.length !== 14) return cnpj;
-  return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12, 14)}`;
+  return formatCnpjDisplay(cnpj);
 }
 
 export function formatDate(dateString: string): string {

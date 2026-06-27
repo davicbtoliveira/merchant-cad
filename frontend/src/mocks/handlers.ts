@@ -32,6 +32,26 @@ export const mockMerchants: Merchant[] = [
     created_at: "2026-06-20T09:00:00Z",
     status: "pending_analysis",
   },
+  {
+    id: 4,
+    cnpj: "12345678000190",
+    legal_name: "Loja Rejeitada Ltda",
+    trade_name: "Loja Rejeitada",
+    contact_email: "rejeitada@loja.com",
+    phone: "11666666666",
+    created_at: "2026-06-21T09:00:00Z",
+    status: "rejected",
+  },
+  {
+    id: 5,
+    cnpj: "23456789000101",
+    legal_name: "Operação Bloqueada S.A.",
+    trade_name: "Operação Bloqueada",
+    contact_email: "bloqueada@operacao.com",
+    phone: "11555555555",
+    created_at: "2026-06-22T09:00:00Z",
+    status: "blocked",
+  },
 ];
 
 export const mockTimeline: Record<number, TimelineEvent[]> = {
@@ -59,10 +79,34 @@ export const mockTimeline: Record<number, TimelineEvent[]> = {
       created_at: "2026-06-20T09:00:00Z",
     },
   ],
+  4: [
+    {
+      id: 5,
+      message: "Merchant criado",
+      created_at: "2026-06-21T09:00:00Z",
+    },
+    {
+      id: 6,
+      message: "Merchant rejeitado: Documentação incompleta",
+      created_at: "2026-06-22T10:00:00Z",
+    },
+  ],
+  5: [
+    {
+      id: 7,
+      message: "Merchant criado",
+      created_at: "2026-06-22T09:00:00Z",
+    },
+    {
+      id: 8,
+      message: "Merchant bloqueado: Atividade suspeita",
+      created_at: "2026-06-23T10:00:00Z",
+    },
+  ],
 };
 
-let nextId = 4;
-let nextEventId = 5;
+let nextId = 6;
+let nextEventId = 9;
 
 export function resetMockData() {
   mockMerchants.length = 0;
@@ -97,6 +141,26 @@ export function resetMockData() {
       created_at: "2026-06-20T09:00:00Z",
       status: "pending_analysis",
     },
+    {
+      id: 4,
+      cnpj: "12345678000190",
+      legal_name: "Loja Rejeitada Ltda",
+      trade_name: "Loja Rejeitada",
+      contact_email: "rejeitada@loja.com",
+      phone: "11666666666",
+      created_at: "2026-06-21T09:00:00Z",
+      status: "rejected",
+    },
+    {
+      id: 5,
+      cnpj: "23456789000101",
+      legal_name: "Operação Bloqueada S.A.",
+      trade_name: "Operação Bloqueada",
+      contact_email: "bloqueada@operacao.com",
+      phone: "11555555555",
+      created_at: "2026-06-22T09:00:00Z",
+      status: "blocked",
+    },
   );
 
   delete mockTimeline[1];
@@ -108,9 +172,25 @@ export function resetMockData() {
   mockTimeline[3] = [
     { id: 4, message: "Merchant criado", created_at: "2026-06-20T09:00:00Z" },
   ];
+  mockTimeline[4] = [
+    { id: 5, message: "Merchant criado", created_at: "2026-06-21T09:00:00Z" },
+    {
+      id: 6,
+      message: "Merchant rejeitado: Documentação incompleta",
+      created_at: "2026-06-22T10:00:00Z",
+    },
+  ];
+  mockTimeline[5] = [
+    { id: 7, message: "Merchant criado", created_at: "2026-06-22T09:00:00Z" },
+    {
+      id: 8,
+      message: "Merchant bloqueado: Atividade suspeita",
+      created_at: "2026-06-23T10:00:00Z",
+    },
+  ];
 
-  nextId = 4;
-  nextEventId = 5;
+  nextId = 6;
+  nextEventId = 9;
 }
 
 export const handlers = [
@@ -296,6 +376,58 @@ export const handlers = [
     (mockTimeline[id] ??= []).push({
       id: nextEventId++,
       message: `Merchant bloqueado: ${body.reason ?? ""}`,
+      created_at: new Date().toISOString(),
+    });
+
+    return HttpResponse.json({ ...merchant });
+  }),
+
+  http.post("/api/merchants/:id/reopen", async ({ params, request }) => {
+    const id = Number(params.id);
+    const merchant = mockMerchants.find((m) => m.id === id);
+    const body = (await request.json()) as { reason?: string };
+
+    if (!merchant) {
+      return HttpResponse.json({ detail: "Não encontrado." }, { status: 404 });
+    }
+
+    if (merchant.status !== "rejected") {
+      return HttpResponse.json(
+        { status: ["Cadastro só pode ser reaberto quando estiver rejeitado."] },
+        { status: 422 },
+      );
+    }
+
+    merchant.status = "draft";
+    (mockTimeline[id] ??= []).push({
+      id: nextEventId++,
+      message: `Merchant reaberto: ${body.reason ?? ""}`,
+      created_at: new Date().toISOString(),
+    });
+
+    return HttpResponse.json({ ...merchant });
+  }),
+
+  http.post("/api/merchants/:id/unblock", async ({ params, request }) => {
+    const id = Number(params.id);
+    const merchant = mockMerchants.find((m) => m.id === id);
+    const body = (await request.json()) as { reason?: string };
+
+    if (!merchant) {
+      return HttpResponse.json({ detail: "Não encontrado." }, { status: 404 });
+    }
+
+    if (merchant.status !== "blocked") {
+      return HttpResponse.json(
+        { status: ["Cadastro só pode ser desbloqueado quando estiver bloqueado."] },
+        { status: 422 },
+      );
+    }
+
+    merchant.status = "approved";
+    (mockTimeline[id] ??= []).push({
+      id: nextEventId++,
+      message: `Merchant desbloqueado: ${body.reason ?? ""}`,
       created_at: new Date().toISOString(),
     });
 

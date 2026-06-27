@@ -7,6 +7,8 @@ import {
   useApproveMerchant,
   useRejectMerchant,
   useBlockMerchant,
+  useReopenMerchant,
+  useUnblockMerchant,
 } from "../api/merchants";
 
 interface MerchantActionsProps {
@@ -56,14 +58,16 @@ function ReasonDialog({
 }
 
 export function MerchantActions({ merchant }: MerchantActionsProps) {
-  const [dialogAction, setDialogAction] = useState<"reject" | "block" | null>(
-    null,
-  );
+  const [dialogAction, setDialogAction] = useState<
+    "reject" | "block" | "reopen" | "unblock" | null
+  >(null);
 
   const submitForAnalysis = useSubmitForAnalysis();
   const approveMerchant = useApproveMerchant();
   const rejectMerchant = useRejectMerchant();
   const blockMerchant = useBlockMerchant();
+  const reopenMerchant = useReopenMerchant();
+  const unblockMerchant = useUnblockMerchant();
 
   async function handleAction(
     action: typeof submitForAnalysis,
@@ -126,6 +130,24 @@ export function MerchantActions({ merchant }: MerchantActionsProps) {
             {blockMerchant.isPending ? "Aguardando..." : "Bloquear"}
           </Button>
         )}
+
+        {merchant.status === "rejected" && (
+          <Button
+            onClick={() => setDialogAction("reopen")}
+            disabled={reopenMerchant.isPending}
+          >
+            {reopenMerchant.isPending ? "Aguardando..." : "Reabrir"}
+          </Button>
+        )}
+
+        {merchant.status === "blocked" && (
+          <Button
+            onClick={() => setDialogAction("unblock")}
+            disabled={unblockMerchant.isPending}
+          >
+            {unblockMerchant.isPending ? "Aguardando..." : "Desbloquear"}
+          </Button>
+        )}
       </div>
 
       {dialogAction === "reject" && (
@@ -149,6 +171,30 @@ export function MerchantActions({ merchant }: MerchantActionsProps) {
           }}
           onCancel={() => setDialogAction(null)}
           isPending={blockMerchant.isPending}
+        />
+      )}
+
+      {dialogAction === "reopen" && (
+        <ReasonDialog
+          title="Reabrir Merchant"
+          onConfirm={async (reason) => {
+            setDialogAction(null);
+            await handleAction(reopenMerchant, reason);
+          }}
+          onCancel={() => setDialogAction(null)}
+          isPending={reopenMerchant.isPending}
+        />
+      )}
+
+      {dialogAction === "unblock" && (
+        <ReasonDialog
+          title="Desbloquear Merchant"
+          onConfirm={async (reason) => {
+            setDialogAction(null);
+            await handleAction(unblockMerchant, reason);
+          }}
+          onCancel={() => setDialogAction(null)}
+          isPending={unblockMerchant.isPending}
         />
       )}
     </>

@@ -89,7 +89,7 @@ describe("MerchantActions", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows no action buttons for rejected", () => {
+  it("shows Reabrir only for rejected", () => {
     renderActions(rejectedMerchant);
     expect(
       screen.queryByRole("button", { name: "Enviar para análise" }),
@@ -103,9 +103,15 @@ describe("MerchantActions", () => {
     expect(
       screen.queryByRole("button", { name: "Bloquear" }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Desbloquear" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Reabrir" }),
+    ).toBeInTheDocument();
   });
 
-  it("shows no action buttons for blocked", () => {
+  it("shows Desbloquear only for blocked", () => {
     renderActions(blockedMerchant);
     expect(
       screen.queryByRole("button", { name: "Enviar para análise" }),
@@ -119,6 +125,12 @@ describe("MerchantActions", () => {
     expect(
       screen.queryByRole("button", { name: "Bloquear" }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Reabrir" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Desbloquear" }),
+    ).toBeInTheDocument();
   });
 
   it("opens reason dialog when clicking Rejeitar", async () => {
@@ -138,6 +150,26 @@ describe("MerchantActions", () => {
     await user.click(screen.getByRole("button", { name: "Bloquear" }));
 
     expect(screen.getByText("Bloquear Merchant")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Confirmar" })).toBeDisabled();
+  });
+
+  it("opens reason dialog when clicking Reabrir", async () => {
+    const user = userEvent.setup();
+    renderActions(rejectedMerchant);
+
+    await user.click(screen.getByRole("button", { name: "Reabrir" }));
+
+    expect(screen.getByText("Reabrir Merchant")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Confirmar" })).toBeDisabled();
+  });
+
+  it("opens reason dialog when clicking Desbloquear", async () => {
+    const user = userEvent.setup();
+    renderActions(blockedMerchant);
+
+    await user.click(screen.getByRole("button", { name: "Desbloquear" }));
+
+    expect(screen.getByText("Desbloquear Merchant")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Confirmar" })).toBeDisabled();
   });
 

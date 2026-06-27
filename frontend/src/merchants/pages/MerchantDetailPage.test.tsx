@@ -138,6 +138,54 @@ describe("MerchantDetailPage", () => {
       });
     });
 
+    it("reopens rejected merchant with reason", async () => {
+      const user = userEvent.setup();
+      renderDetailPage("4");
 
+      await waitFor(() => {
+        expect(
+          screen.getByRole("button", { name: "Reabrir" }),
+        ).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByRole("button", { name: "Reabrir" }));
+      await user.type(
+        screen.getByPlaceholderText("Motivo (obrigatório)"),
+        "Cadastro corrigido",
+      );
+      await user.click(screen.getByRole("button", { name: "Confirmar" }));
+
+      await waitFor(() => {
+        expect(screen.getByText("Rascunho")).toBeInTheDocument();
+      });
+      expect(
+        screen.getByText("Merchant reaberto: Cadastro corrigido"),
+      ).toBeInTheDocument();
+    });
+
+    it("unblocks blocked merchant with reason", async () => {
+      const user = userEvent.setup();
+      renderDetailPage("5");
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole("button", { name: "Desbloquear" }),
+        ).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByRole("button", { name: "Desbloquear" }));
+      await user.type(
+        screen.getByPlaceholderText("Motivo (obrigatório)"),
+        "Risco resolvido",
+      );
+      await user.click(screen.getByRole("button", { name: "Confirmar" }));
+
+      await waitFor(() => {
+        expect(screen.getByText("Aprovado")).toBeInTheDocument();
+      });
+      expect(
+        screen.getByText("Merchant desbloqueado: Risco resolvido"),
+      ).toBeInTheDocument();
+    });
   });
 });

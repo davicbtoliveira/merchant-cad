@@ -1,6 +1,7 @@
 import { useForm, useController } from "react-hook-form";
 import { Button } from "../../ui/Button";
 import { Input } from "../../ui/Input";
+import { formatCnpjDisplay, normalizeCnpjInput } from "../utils/cnpj";
 import { formatPhoneDisplay } from "../utils/phone";
 
 export interface MerchantFormValues {
@@ -17,17 +18,6 @@ interface MerchantFormProps {
   isSubmitting?: boolean;
   serverErrors?: Record<string, string>;
   generalError?: string;
-}
-
-function formatCnpjDisplay(value: string): string {
-  const digits = value.replace(/\D/g, "").slice(0, 14);
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 5) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
-  if (digits.length <= 8)
-    return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`;
-  if (digits.length <= 12)
-    return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8)}`;
-  return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12, 14)}`;
 }
 
 export function MerchantForm({
@@ -59,8 +49,11 @@ export function MerchantForm({
     rules: {
       required: "CNPJ é obrigatório",
       validate: (value) => {
-        const digits = value.replace(/\D/g, "");
-        if (digits.length !== 14) return "CNPJ deve ter 14 dígitos";
+        const cnpj = normalizeCnpjInput(value);
+        if (cnpj.length !== 14) return "CNPJ deve ter 14 caracteres";
+        if (!/^\d{2}$/.test(cnpj.slice(12, 14))) {
+          return "Dígitos verificadores do CNPJ devem ser numéricos";
+        }
         return true;
       },
     },
@@ -74,7 +67,7 @@ export function MerchantForm({
   async function handleFormSubmit(values: MerchantFormValues) {
     await onSubmit({
       ...values,
-      cnpj: values.cnpj.replace(/\D/g, ""),
+      cnpj: normalizeCnpjInput(values.cnpj),
       phone: values.phone.replace(/\D/g, ""),
     });
   }
@@ -91,8 +84,7 @@ export function MerchantForm({
         placeholder="00.000.000/0000-00"
         value={formatCnpjDisplay(cnpjField.value)}
         onChange={(e) => {
-          const raw = e.target.value.replace(/\D/g, "").slice(0, 14);
-          cnpjField.onChange(raw);
+          cnpjField.onChange(normalizeCnpjInput(e.target.value));
         }}
         onBlur={cnpjField.onBlur}
         ref={cnpjField.ref}

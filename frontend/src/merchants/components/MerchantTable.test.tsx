@@ -25,6 +25,16 @@ const mockMerchants: Merchant[] = [
     created_at: "2026-06-15T14:30:00Z",
     status: "approved",
   },
+  {
+    id: 3,
+    cnpj: "AB345678000B72",
+    legal_name: "Empresa Alpha Ltda",
+    trade_name: "Alpha",
+    contact_email: "alpha@empresa.com",
+    phone: "11777777777",
+    created_at: "2026-06-16T10:00:00Z",
+    status: "draft",
+  },
 ];
 
 describe("MerchantTable", () => {
@@ -37,6 +47,7 @@ describe("MerchantTable", () => {
 
     expect(screen.getByText("Empresa Exemplo Ltda")).toBeInTheDocument();
     expect(screen.getByText("Comércio ABC S.A.")).toBeInTheDocument();
+    expect(screen.getByText("AB.345.678/000B-72")).toBeInTheDocument();
   });
 
   it("renders empty state when list is empty", () => {
