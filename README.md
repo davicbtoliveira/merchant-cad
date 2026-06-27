@@ -128,10 +128,15 @@ As transições possuem endpoints dedicados para garantir a imutabilidade das re
 
 ### Status Possíveis
 `draft` ➔ `pending_analysis`
+
 `pending_analysis` ➔ `approved`
+
 `pending_analysis` ➔ `rejected`
+
 `approved` ➔ `blocked`
+
 `rejected` ➔ `draft`
+
 `blocked` ➔ `approved`
 
 ### Timeline de Eventos (Strings Exatas)
