@@ -285,7 +285,7 @@ export const handlers = [
 
     if (body.cnpj === "12345678000195") {
       return HttpResponse.json(
-        { cnpj: ["Merchant with this CNPJ already exists."] },
+        { cnpj: ["Já existe um merchant com esse CNPJ."] },
         { status: 422 },
       );
     }

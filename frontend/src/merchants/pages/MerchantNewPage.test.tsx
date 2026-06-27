@@ -15,7 +15,10 @@ function renderNewPage() {
       <MemoryRouter initialEntries={["/merchants/new"]}>
         <Routes>
           <Route path="/merchants/new" element={<MerchantNewPage />} />
-          <Route path="/merchants/:id" element={<div>Merchant Detail Page</div>} />
+          <Route
+            path="/merchants/:id"
+            element={<div>Merchant Detail Page</div>}
+          />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -37,7 +40,10 @@ describe("MerchantNewPage", () => {
     renderNewPage();
 
     await user.type(screen.getByLabelText("CNPJ"), "11222333000181");
-    await user.type(screen.getByLabelText("Razão Social"), "Empresa Teste Ltda");
+    await user.type(
+      screen.getByLabelText("Razão Social"),
+      "Empresa Teste Ltda",
+    );
     await user.type(screen.getByLabelText("E-mail"), "teste@teste.com");
 
     await user.click(screen.getByRole("button", { name: "Salvar" }));
@@ -52,17 +58,18 @@ describe("MerchantNewPage", () => {
     renderNewPage();
 
     await user.type(screen.getByLabelText("CNPJ"), "12345678000195");
-    await user.type(screen.getByLabelText("Razão Social"), "Empresa Teste Ltda");
+    await user.type(
+      screen.getByLabelText("Razão Social"),
+      "Empresa Teste Ltda",
+    );
     await user.type(screen.getByLabelText("E-mail"), "teste@teste.com");
 
     await user.click(screen.getByRole("button", { name: "Salvar" }));
 
     await waitFor(() => {
       expect(
-        screen.getByText("Merchant with this CNPJ already exists."),
+        screen.getByText("Já existe um merchant com esse CNPJ."),
       ).toBeInTheDocument();
     });
   });
-
-
 });

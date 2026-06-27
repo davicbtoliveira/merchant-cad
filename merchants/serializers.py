@@ -29,7 +29,7 @@ class MerchantSerializer(serializers.ModelSerializer):
             merchants = merchants.exclude(pk=self.instance.pk)
 
         if merchants.exists():
-            raise serializers.ValidationError("Merchant with this CNPJ already exists.")
+            raise serializers.ValidationError("Já existe um merchant com esse CNPJ.")
 
         return normalized_cnpj
 

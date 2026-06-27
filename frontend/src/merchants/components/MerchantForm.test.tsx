@@ -32,7 +32,10 @@ describe("MerchantForm", () => {
     render(<MerchantForm onSubmit={onSubmit} />);
 
     await user.type(screen.getByLabelText("CNPJ"), "11.222.333/0001-81");
-    await user.type(screen.getByLabelText("Razão Social"), "Empresa Teste Ltda");
+    await user.type(
+      screen.getByLabelText("Razão Social"),
+      "Empresa Teste Ltda",
+    );
     await user.type(screen.getByLabelText("E-mail"), "teste@teste.com");
 
     await user.click(screen.getByRole("button", { name: "Salvar" }));
@@ -53,7 +56,10 @@ describe("MerchantForm", () => {
     render(<MerchantForm onSubmit={onSubmit} />);
 
     await user.type(screen.getByLabelText("CNPJ"), "ab.345.678/000b-72");
-    await user.type(screen.getByLabelText("Razão Social"), "Empresa Teste Ltda");
+    await user.type(
+      screen.getByLabelText("Razão Social"),
+      "Empresa Teste Ltda",
+    );
     await user.type(screen.getByLabelText("E-mail"), "teste@teste.com");
 
     await user.click(screen.getByRole("button", { name: "Salvar" }));
@@ -74,7 +80,10 @@ describe("MerchantForm", () => {
     render(<MerchantForm onSubmit={onSubmit} />);
 
     await user.type(screen.getByLabelText("CNPJ"), "ab.345.678/000b-71");
-    await user.type(screen.getByLabelText("Razão Social"), "Empresa Teste Ltda");
+    await user.type(
+      screen.getByLabelText("Razão Social"),
+      "Empresa Teste Ltda",
+    );
     await user.type(screen.getByLabelText("E-mail"), "teste@teste.com");
 
     await user.click(screen.getByRole("button", { name: "Salvar" }));
@@ -87,12 +96,12 @@ describe("MerchantForm", () => {
     render(
       <MerchantForm
         onSubmit={vi.fn()}
-        serverErrors={{ cnpj: "Merchant with this CNPJ already exists." }}
+        serverErrors={{ cnpj: "Já existe um merchant com esse CNPJ." }}
       />,
     );
 
     expect(
-      screen.getByText("Merchant with this CNPJ already exists."),
+      screen.getByText("Já existe um merchant com esse CNPJ."),
     ).toBeInTheDocument();
   });
 
@@ -149,7 +158,10 @@ describe("MerchantForm", () => {
     render(<MerchantForm onSubmit={onSubmit} />);
 
     await user.type(screen.getByLabelText("CNPJ"), "11222333000181");
-    await user.type(screen.getByLabelText("Razão Social"), "Empresa Teste Ltda");
+    await user.type(
+      screen.getByLabelText("Razão Social"),
+      "Empresa Teste Ltda",
+    );
     await user.type(screen.getByLabelText("E-mail"), "teste@teste.com");
     await user.type(screen.getByLabelText("Telefone"), "11991234567");
 
