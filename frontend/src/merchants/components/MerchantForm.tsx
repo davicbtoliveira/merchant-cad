@@ -1,6 +1,7 @@
 import { useForm, useController } from "react-hook-form";
 import { Button } from "../../ui/Button";
 import { Input } from "../../ui/Input";
+import { formatPhoneDisplay } from "../utils/phone";
 
 export interface MerchantFormValues {
   cnpj: string;
@@ -65,10 +66,16 @@ export function MerchantForm({
     },
   });
 
+  const { field: phoneField } = useController({
+    control,
+    name: "phone",
+  });
+
   async function handleFormSubmit(values: MerchantFormValues) {
     await onSubmit({
       ...values,
       cnpj: values.cnpj.replace(/\D/g, ""),
+      phone: values.phone.replace(/\D/g, ""),
     });
   }
 
@@ -115,8 +122,15 @@ export function MerchantForm({
 
       <Input
         label="Telefone"
+        placeholder="(11) 9123-4567"
+        value={formatPhoneDisplay(phoneField.value)}
+        onChange={(e) => {
+          const raw = e.target.value.replace(/\D/g, "").slice(0, 11);
+          phoneField.onChange(raw);
+        }}
+        onBlur={phoneField.onBlur}
+        ref={phoneField.ref}
         error={serverErrors.phone}
-        {...register("phone")}
       />
 
       <div className="flex items-center gap-3">

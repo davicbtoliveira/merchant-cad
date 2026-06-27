@@ -1,8 +1,10 @@
 import re
 
+from rest_framework.exceptions import ValidationError
+
 CNPJ_LENGTH = 14
 CNPJ_CHARSET = re.compile(r"^[A-Z0-9]+$")
-CNPJ_STRIP_CHARSET = re.compile(r"[.\-/\\s]+")
+CNPJ_STRIP_CHARSET = re.compile(r"[.\-/\s]+")
 
 DV1_WEIGHTS = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
 DV2_WEIGHTS = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
@@ -18,25 +20,28 @@ class CNPJValidator:
         return CNPJ_STRIP_CHARSET.sub("", value).upper()
 
     @staticmethod
-    def validate(value: str) -> bool:
+    def validate(value: str) -> str:
         normalized = CNPJValidator.normalize(value)
 
         if len(normalized) != CNPJ_LENGTH:
-            return False
+            raise ValidationError("CNPJ inválido.")
 
         if not CNPJ_CHARSET.match(normalized):
-            return False
+            raise ValidationError("CNPJ inválido.")
 
         if len(set(normalized)) == 1:
-            return False
+            raise ValidationError("CNPJ inválido.")
 
         if not normalized[12].isdigit() or not normalized[13].isdigit():
-            return False
+            raise ValidationError("CNPJ inválido.")
 
-        return (
-            _check_digit(normalized[:12], DV1_WEIGHTS) == normalized[12]
-            and _check_digit(normalized[:13], DV2_WEIGHTS) == normalized[13]
-        )
+        if (
+            _check_digit(normalized[:12], DV1_WEIGHTS) != normalized[12]
+            or _check_digit(normalized[:13], DV2_WEIGHTS) != normalized[13]
+        ):
+            raise ValidationError("CNPJ inválido.")
+
+        return normalized
 
 
 def _check_digit(chars: str, weights: list[int]) -> str:
@@ -46,8 +51,13 @@ def _check_digit(chars: str, weights: list[int]) -> str:
 
 
 class PhoneValidator:
+    message = "Telefone deve ter entre 10 e 11 dígitos."
+
     @staticmethod
-    def validate(value: str) -> bool:
-        if not isinstance(value, str):
-            return False
-        return bool(PHONE_PATTERN.match(value))
+    def validate(value: str) -> str:
+        if not value:
+            return value or ""
+
+        if not isinstance(value, str) or not PHONE_PATTERN.match(value):
+            raise ValidationError(PhoneValidator.message)
+        return value

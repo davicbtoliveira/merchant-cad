@@ -1,6 +1,7 @@
 from django.test import SimpleTestCase
 from django.urls import reverse
 from rest_framework import status
+from rest_framework.exceptions import ValidationError
 from rest_framework.test import APITestCase
 
 from merchants.models import Merchant, MerchantEvent
@@ -1118,6 +1119,20 @@ class MerchantCnpjValidationTests(MerchantApiTestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["cnpj"], "11222333000181")
 
+    def test_accepts_numeric_cnpj_with_whitespace(self):
+        response = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": "11 222 333 0001 81",
+                "legal_name": "Numeric Space LTDA",
+                "contact_email": "numeric-space@cnpj.example",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["cnpj"], "11222333000181")
+
     def test_accepts_alphanumeric_cnpj_with_punctuation_and_uppercases(self):
         response = self.client.post(
             reverse("merchant-list"),
@@ -1489,27 +1504,64 @@ class MerchantPhoneValidationTests(MerchantApiTestCase):
         self.assertEqual(merchant.phone, "1191234567")
 
 
-class PhoneValidatorStructureTests(SimpleTestCase):
-    def test_phone_validator_is_separate_class_with_validate_method(self):
+class ValidatorStructureTests(SimpleTestCase):
+    def test_validators_are_separate_classes_with_validate_methods(self):
         from merchants.validators import CNPJValidator, PhoneValidator
 
         self.assertNotEqual(PhoneValidator, CNPJValidator)
+        self.assertTrue(hasattr(CNPJValidator, "validate"))
+        self.assertTrue(callable(getattr(CNPJValidator, "validate")))
         self.assertTrue(hasattr(PhoneValidator, "validate"))
         self.assertTrue(callable(getattr(PhoneValidator, "validate")))
 
-    def test_phone_validator_accepts_10_and_11_digit_strings(self):
+    def test_cnpj_validator_returns_normalized_cnpj(self):
+        from merchants.validators import CNPJValidator
+
+        self.assertEqual(
+            CNPJValidator.validate("11 222 333 0001 81"),
+            "11222333000181",
+        )
+        self.assertEqual(
+            CNPJValidator.validate("ab.345.678/000b-72"),
+            "AB345678000B72",
+        )
+
+    def test_cnpj_validator_raises_validation_error_for_invalid_values(self):
+        from merchants.validators import CNPJValidator
+
+        invalid_cnpjs = [
+            "",
+            "1122233300018",
+            "112223330001811",
+            "11.222.333/0001-8!",
+            "00000000000000",
+            "AB345678000B7A",
+            None,
+        ]
+        for invalid_cnpj in invalid_cnpjs:
+            with self.subTest(cnpj=invalid_cnpj):
+                with self.assertRaises(ValidationError):
+                    CNPJValidator.validate(invalid_cnpj)
+
+    def test_phone_validator_accepts_blank_10_and_11_digit_strings(self):
         from merchants.validators import PhoneValidator
 
-        self.assertTrue(PhoneValidator.validate("1191234567"))
-        self.assertTrue(PhoneValidator.validate("11991234567"))
+        self.assertEqual(PhoneValidator.validate(""), "")
+        self.assertEqual(PhoneValidator.validate("1191234567"), "1191234567")
+        self.assertEqual(PhoneValidator.validate("11991234567"), "11991234567")
 
-    def test_phone_validator_rejects_non_digit_and_out_of_range(self):
+    def test_phone_validator_raises_validation_error_for_invalid_values(self):
         from merchants.validators import PhoneValidator
 
-        self.assertFalse(PhoneValidator.validate(""))
-        self.assertFalse(PhoneValidator.validate("123456789"))
-        self.assertFalse(PhoneValidator.validate("123456789012"))
-        self.assertFalse(PhoneValidator.validate("abcdefghij"))
-        self.assertFalse(PhoneValidator.validate("(11) 91234-5678"))
-        self.assertFalse(PhoneValidator.validate("119123!4567@"))
-        self.assertFalse(PhoneValidator.validate(None))
+        invalid_phones = [
+            "123456789",
+            "123456789012",
+            "abcdefghij",
+            "(11) 91234-5678",
+            "119123!4567@",
+            None,
+        ]
+        for invalid_phone in invalid_phones:
+            with self.subTest(phone=invalid_phone):
+                with self.assertRaises(ValidationError):
+                    PhoneValidator.validate(invalid_phone)

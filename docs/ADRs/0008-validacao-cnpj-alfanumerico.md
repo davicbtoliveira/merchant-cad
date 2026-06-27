@@ -69,8 +69,8 @@ CNPJs numéricos legados (todos dígitos, 14 posições) permanecem válidos sob
 
 ## Implementação
 
-- Novo módulo `merchants/validators.py` com `normalize_cnpj` (regex strip `.-/\s` + upper) e `validate_cnpj` (retorna `bool`).
-- `MerchantSerializer.validate_cnpj` passa a chamar `validate_cnpj` e ainda preserva a checagem de unicidade existente. A função `normalize_cnpj` local em `serializers.py` (que mantinha apenas dígitos) é substituída pela do novo módulo.
+- Novo módulo `merchants/validators.py` com `CNPJValidator.normalize` (regex strip `.-/\s` + upper) e `CNPJValidator.validate` (retorna o CNPJ normalizado ou levanta `rest_framework.exceptions.ValidationError`).
+- `MerchantSerializer.validate_cnpj` passa a chamar `CNPJValidator.validate` e ainda preserva a checagem de unicidade existente. A função `normalize_cnpj` local em `serializers.py` (que mantinha apenas dígitos) é substituída pela do novo módulo.
 - Migration tightening `cnpj` para `max_length=14`.
 
 ## Alternativa rejeitada
