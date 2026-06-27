@@ -20,9 +20,9 @@ Os eventos serão retornados em ordem cronológica, com `created_at`, para permi
 
 ## Fora do escopo desta etapa
 
-Não serão implementados autenticação, frontend, integração com gov.br, validação completa de CNPJ, Docker ou Postgres nesta primeira etapa. O CNPJ será obrigatório, único e salvo apenas com dígitos em um campo texto, mas a validação formal do número ficará para uma evolução futura.
+Não serão implementados autenticação, frontend, integração com gov.br ou validação completa de CNPJ nesta primeira etapa. O CNPJ será obrigatório, único e salvo apenas com dígitos em um campo texto, mas a validação formal do número ficará para uma evolução futura.
 
-Postgres em Docker e frontend ficam planejados para depois, quando a API core e suas regras de negócio já estiverem cobertas por testes.
+Postgres em Docker e frontend ficam planejados para depois, quando a API core e suas regras de negócio já estiverem cobertas por testes. A decisão posterior sobre o ambiente Docker/PostgreSQL está documentada no ADR 0004.
 
 ## Consequências
 
