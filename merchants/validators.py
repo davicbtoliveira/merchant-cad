@@ -7,6 +7,8 @@ CNPJ_STRIP_CHARSET = re.compile(r"[.\-/\\s]+")
 DV1_WEIGHTS = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
 DV2_WEIGHTS = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
 
+PHONE_PATTERN = re.compile(r"^[0-9]{10,11}$")
+
 
 class CNPJValidator:
     @staticmethod
@@ -41,3 +43,11 @@ def _check_digit(chars: str, weights: list[int]) -> str:
     total = sum((ord(char) - 48) * weight for char, weight in zip(chars, weights))
     remainder = total % 11
     return "0" if remainder < 2 else str(11 - remainder)
+
+
+class PhoneValidator:
+    @staticmethod
+    def validate(value: str) -> bool:
+        if not isinstance(value, str):
+            return False
+        return bool(PHONE_PATTERN.match(value))
