@@ -34,10 +34,9 @@ Sobe o banco de dados PostgreSQL, a API Django e o Frontend React de uma só vez
 ```bash
 # Construir e subir os containers
 docker compose up -d --build
-
-# Executar as migrations no banco PostgreSQL
-docker compose run --rm app python manage.py migrate
 ```
+
+O `docker-compose.yml` executa as migrations em um serviço one-shot antes de iniciar a API.
 
 - **Frontend:** `http://localhost/`
 - **API:** `http://localhost:8000/api/merchants/`
