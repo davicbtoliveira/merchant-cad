@@ -29,11 +29,28 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/merchants/', timeout=2)"]
       interval: 2s
       timeout: 5s
       retries: 10
+    volumes:
+      - .:/app
+
+  migrate:
+    build: .
+    command: ["python", "manage.py", "migrate"]
+    environment:
+      POSTGRES_DB: merchant_cad
+      POSTGRES_USER: merchant_cad
+      POSTGRES_PASSWORD: merchant_cad
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+    depends_on:
+      db:
+        condition: service_healthy
     volumes:
       - .:/app
 
