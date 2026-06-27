@@ -45,4 +45,4 @@ class MerchantEventSerializer(serializers.ModelSerializer):
 
 
 class MerchantRejectSerializer(serializers.Serializer):
-    reason = serializers.CharField(allow_blank=False, allow_null=False)
+    reason = serializers.CharField(max_length=200, allow_blank=False, allow_null=False)

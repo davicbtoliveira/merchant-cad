@@ -24,22 +24,22 @@ class CNPJValidator:
         normalized = CNPJValidator.normalize(value)
 
         if len(normalized) != CNPJ_LENGTH:
-            raise ValidationError("CNPJ inválido.")
+            raise ValidationError("Invalid CNPJ.")
 
         if not CNPJ_CHARSET.match(normalized):
-            raise ValidationError("CNPJ inválido.")
+            raise ValidationError("Invalid CNPJ.")
 
         if len(set(normalized)) == 1:
-            raise ValidationError("CNPJ inválido.")
+            raise ValidationError("Invalid CNPJ.")
 
         if not normalized[12].isdigit() or not normalized[13].isdigit():
-            raise ValidationError("CNPJ inválido.")
+            raise ValidationError("Invalid CNPJ.")
 
         if (
             _check_digit(normalized[:12], DV1_WEIGHTS) != normalized[12]
             or _check_digit(normalized[:13], DV2_WEIGHTS) != normalized[13]
         ):
-            raise ValidationError("CNPJ inválido.")
+            raise ValidationError("Invalid CNPJ.")
 
         return normalized
 
@@ -51,13 +51,11 @@ def _check_digit(chars: str, weights: list[int]) -> str:
 
 
 class PhoneValidator:
-    message = "Telefone deve ter entre 10 e 11 dígitos."
-
     @staticmethod
     def validate(value: str) -> str:
-        if not value:
-            return value or ""
+        if value == "":
+            return value
 
         if not isinstance(value, str) or not PHONE_PATTERN.match(value):
-            raise ValidationError(PhoneValidator.message)
+            raise ValidationError("Phone must have between 10 and 11 digits.")
         return value

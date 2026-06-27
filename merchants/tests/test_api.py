@@ -592,7 +592,7 @@ class MerchantTimelineTests(MerchantApiTestCase):
         )
         MerchantEvent.objects.create(
             merchant=second_merchant,
-            message="Merchant de outro cadastro",
+            message="Cadastro de outro estabelecimento",
         )
 
         response = self.client.get(
@@ -634,7 +634,7 @@ class MerchantReopenTests(MerchantApiTestCase):
 
         response = self.client.post(
             reverse("merchant-reopen", kwargs={"pk": created.data["id"]}),
-            {"reason": "Merchant regularizou documentação"},
+            {"reason": "Documentação regularizada"},
             format="json",
         )
 
@@ -654,7 +654,7 @@ class MerchantReopenTests(MerchantApiTestCase):
             [
                 SUBMIT_FOR_ANALYSIS_MESSAGE,
                 REJECT_MERCHANT_MESSAGE.format("Documentação inconsistente"),
-                REOPEN_MERCHANT_MESSAGE.format("Merchant regularizou documentação"),
+                REOPEN_MERCHANT_MESSAGE.format("Documentação regularizada"),
             ],
         )
 
