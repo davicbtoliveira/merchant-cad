@@ -5,7 +5,9 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY manage.py ./
+COPY merchant_cad/ merchant_cad/
+COPY merchants/ merchants/
 
 EXPOSE 8000
 
