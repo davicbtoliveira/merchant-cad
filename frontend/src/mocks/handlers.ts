@@ -166,7 +166,11 @@ export function resetMockData() {
   delete mockTimeline[1];
   mockTimeline[2] = [
     { id: 1, message: "Merchant criado", created_at: "2026-06-15T14:30:00Z" },
-    { id: 2, message: "Merchant enviado para análise", created_at: "2026-06-16T09:00:00Z" },
+    {
+      id: 2,
+      message: "Merchant enviado para análise",
+      created_at: "2026-06-16T09:00:00Z",
+    },
     { id: 3, message: "Merchant aprovado", created_at: "2026-06-17T11:00:00Z" },
   ];
   mockTimeline[3] = [
@@ -227,7 +231,11 @@ export const handlers = [
 
     if (merchant.status !== "draft") {
       return HttpResponse.json(
-        { status: ["Merchant registration data can only be updated while in draft."] },
+        {
+          status: [
+            "Merchant registration data can only be updated while in draft.",
+          ],
+        },
         { status: 422 },
       );
     }
@@ -236,9 +244,12 @@ export const handlers = [
     const updated = { ...merchant };
 
     if (typeof body.cnpj === "string") updated.cnpj = body.cnpj;
-    if (typeof body.legal_name === "string") updated.legal_name = body.legal_name;
-    if (typeof body.trade_name === "string") updated.trade_name = body.trade_name;
-    if (typeof body.contact_email === "string") updated.contact_email = body.contact_email;
+    if (typeof body.legal_name === "string")
+      updated.legal_name = body.legal_name;
+    if (typeof body.trade_name === "string")
+      updated.trade_name = body.trade_name;
+    if (typeof body.contact_email === "string")
+      updated.contact_email = body.contact_email;
     if (typeof body.phone === "string") updated.phone = body.phone;
 
     Object.assign(merchant, updated);
@@ -393,7 +404,7 @@ export const handlers = [
 
     if (merchant.status !== "rejected") {
       return HttpResponse.json(
-        { status: ["Cadastro só pode ser reaberto quando estiver rejeitado."] },
+        { status: ["Merchant só pode ser reaberto quando estiver rejeitado."] },
         { status: 422 },
       );
     }
@@ -419,7 +430,11 @@ export const handlers = [
 
     if (merchant.status !== "blocked") {
       return HttpResponse.json(
-        { status: ["Cadastro só pode ser desbloqueado quando estiver bloqueado."] },
+        {
+          status: [
+            "Merchant só pode ser desbloqueado quando estiver bloqueado.",
+          ],
+        },
         { status: 422 },
       );
     }

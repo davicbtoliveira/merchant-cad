@@ -3,12 +3,12 @@ from django.db import transaction
 from merchants.exceptions import BusinessRuleViolation
 from merchants.models import Merchant, MerchantEvent
 
-SUBMIT_FOR_ANALYSIS_MESSAGE = "Cadastro enviado para análise"
-APPROVE_MERCHANT_MESSAGE = "Cadastro aprovado"
-REJECT_MERCHANT_MESSAGE = "Cadastro rejeitado: {}"
-BLOCK_MERCHANT_MESSAGE = "Cadastro bloqueado: {}"
-REOPEN_MERCHANT_MESSAGE = "Cadastro reaberto: {}"
-UNBLOCK_MERCHANT_MESSAGE = "Cadastro desbloqueado: {}"
+SUBMIT_FOR_ANALYSIS_MESSAGE = "Merchant enviado para análise"
+APPROVE_MERCHANT_MESSAGE = "Merchant aprovado"
+REJECT_MERCHANT_MESSAGE = "Merchant rejeitado: {}"
+BLOCK_MERCHANT_MESSAGE = "Merchant bloqueado: {}"
+REOPEN_MERCHANT_MESSAGE = "Merchant reaberto: {}"
+UNBLOCK_MERCHANT_MESSAGE = "Merchant desbloqueado: {}"
 
 
 def ensure_can_update_registration_data(merchant: Merchant) -> None:
@@ -16,7 +16,7 @@ def ensure_can_update_registration_data(merchant: Merchant) -> None:
         raise BusinessRuleViolation(
             {
                 "status": (
-                    "Dados cadastrais só podem ser atualizados enquanto o cadastro "
+                    "Dados cadastrais só podem ser atualizados enquanto o merchant "
                     "estiver em rascunho."
                 )
             }
@@ -28,7 +28,7 @@ def ensure_can_submit_for_analysis(merchant: Merchant) -> None:
         raise BusinessRuleViolation(
             {
                 "status": (
-                    "Cadastro só pode ser enviado para análise a partir de rascunho."
+                    "Merchant só pode ser enviado para análise a partir de rascunho."
                 )
             }
         )
@@ -37,7 +37,7 @@ def ensure_can_submit_for_analysis(merchant: Merchant) -> None:
 def ensure_can_approve_merchant(merchant: Merchant) -> None:
     if merchant.status != Merchant.Status.PENDING_ANALYSIS:
         raise BusinessRuleViolation(
-            {"status": "Cadastro só pode ser aprovado quando estiver em análise."}
+            {"status": "Merchant só pode ser aprovado quando estiver em análise."}
         )
 
 
@@ -74,7 +74,7 @@ def approve_merchant(merchant: Merchant) -> Merchant:
 def ensure_can_reject_merchant(merchant: Merchant) -> None:
     if merchant.status != Merchant.Status.PENDING_ANALYSIS:
         raise BusinessRuleViolation(
-            {"status": "Cadastro só pode ser rejeitado quando estiver em análise."}
+            {"status": "Merchant só pode ser rejeitado quando estiver em análise."}
         )
 
 
@@ -96,7 +96,7 @@ def reject_merchant(merchant: Merchant, reason: str) -> Merchant:
 def ensure_can_block_merchant(merchant: Merchant) -> None:
     if merchant.status != Merchant.Status.APPROVED:
         raise BusinessRuleViolation(
-            {"status": "Cadastro só pode ser bloqueado quando estiver aprovado."}
+            {"status": "Merchant só pode ser bloqueado quando estiver aprovado."}
         )
 
 
@@ -118,7 +118,7 @@ def block_merchant(merchant: Merchant, reason: str) -> Merchant:
 def ensure_can_reopen_merchant(merchant: Merchant) -> None:
     if merchant.status != Merchant.Status.REJECTED:
         raise BusinessRuleViolation(
-            {"status": "Cadastro só pode ser reaberto quando estiver rejeitado."}
+            {"status": "Merchant só pode ser reaberto quando estiver rejeitado."}
         )
 
 
@@ -140,7 +140,7 @@ def reopen_merchant(merchant: Merchant, reason: str) -> Merchant:
 def ensure_can_unblock_merchant(merchant: Merchant) -> None:
     if merchant.status != Merchant.Status.BLOCKED:
         raise BusinessRuleViolation(
-            {"status": "Cadastro só pode ser desbloqueado quando estiver bloqueado."}
+            {"status": "Merchant só pode ser desbloqueado quando estiver bloqueado."}
         )
 
 
