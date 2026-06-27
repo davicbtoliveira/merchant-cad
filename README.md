@@ -114,7 +114,11 @@ telefone        -> phone
 ```
 
 `cnpj`, `legal_name` e `contact_email` são obrigatórios. `trade_name` e `phone`
-são opcionais.
+são opcionais. Quando preenchido, `phone` deve conter apenas dígitos, com
+10 dígitos (fixo) ou 11 dígitos (móvel) — cobertura do formato brasileiro.
+Entradas com letras, pontuação ou outros caracteres não-dígitos são rejeitadas
+com `400 Bad Request`. O backend não normaliza `phone`: o valor enviado é
+armazenado como recebido.
 
 ## Endpoints da API
 

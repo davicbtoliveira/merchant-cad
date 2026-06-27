@@ -1,3 +1,4 @@
+from django.test import SimpleTestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -44,7 +45,7 @@ class MerchantCreationTests(MerchantApiTestCase):
                 "legal_name": "Acme Pagamentos LTDA",
                 "trade_name": "Acme Pay",
                 "contact_email": "ops@acme.example",
-                "phone": "+55 11 99999-0000",
+                "phone": "11999990000",
             },
             format="json",
         )
@@ -55,7 +56,7 @@ class MerchantCreationTests(MerchantApiTestCase):
         self.assertEqual(response.data["legal_name"], "Acme Pagamentos LTDA")
         self.assertEqual(response.data["trade_name"], "Acme Pay")
         self.assertEqual(response.data["contact_email"], "ops@acme.example")
-        self.assertEqual(response.data["phone"], "+55 11 99999-0000")
+        self.assertEqual(response.data["phone"], "11999990000")
         self.assertIn("created_at", response.data)
 
         detail = self.client.get(
@@ -236,7 +237,7 @@ class MerchantUpdateTests(MerchantApiTestCase):
                 "legal_name": "Acme Solucoes Financeiras LTDA",
                 "trade_name": "Acme Solucoes",
                 "contact_email": "analise@acme.example",
-                "phone": "+55 11 98888-7777",
+                "phone": "11988887777",
             },
             format="json",
         )
@@ -245,7 +246,7 @@ class MerchantUpdateTests(MerchantApiTestCase):
         self.assertEqual(response.data["legal_name"], "Acme Solucoes Financeiras LTDA")
         self.assertEqual(response.data["trade_name"], "Acme Solucoes")
         self.assertEqual(response.data["contact_email"], "analise@acme.example")
-        self.assertEqual(response.data["phone"], "+55 11 98888-7777")
+        self.assertEqual(response.data["phone"], "11988887777")
         self.assertEqual(response.data["status"], "draft")
 
     def test_does_not_allow_status_to_be_changed_by_regular_update(self):
@@ -1290,3 +1291,225 @@ class MerchantCnpjValidationTests(MerchantApiTestCase):
 
         merchant = Merchant.objects.get(pk=created.data["id"])
         self.assertEqual(merchant.cnpj, "11222333000181")
+
+
+class MerchantPhoneValidationTests(MerchantApiTestCase):
+    def test_post_with_empty_phone_returns_201_with_empty_phone(self):
+        response = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": "11.222.333/0001-81",
+                "legal_name": "Empty Phone LTDA",
+                "contact_email": "empty@phone.example",
+                "phone": "",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["phone"], "")
+
+    def test_post_with_phone_10_digits_returns_201(self):
+        response = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": "11.222.333/0001-81",
+                "legal_name": "Ten Digits LTDA",
+                "contact_email": "ten@digits.example",
+                "phone": "1191234567",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["phone"], "1191234567")
+
+    def test_post_with_phone_11_digits_returns_201(self):
+        response = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": "11.222.333/0001-81",
+                "legal_name": "Eleven Digits LTDA",
+                "contact_email": "eleven@digits.example",
+                "phone": "11991234567",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["phone"], "11991234567")
+
+    def test_post_with_phone_containing_letters_returns_400(self):
+        response = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": "11.222.333/0001-81",
+                "legal_name": "Letters Phone LTDA",
+                "contact_email": "letters@phone.example",
+                "phone": "abcdefgh",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("phone", response.data)
+        self.assertEqual(Merchant.objects.count(), 0)
+
+    def test_post_with_phone_with_punctuation_returns_400(self):
+        response = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": "11.222.333/0001-81",
+                "legal_name": "Punct Phone LTDA",
+                "contact_email": "punct@phone.example",
+                "phone": "(11) 91234-5678",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("phone", response.data)
+        self.assertEqual(Merchant.objects.count(), 0)
+
+    def test_post_with_phone_9_digits_returns_400_too_short(self):
+        response = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": "11.222.333/0001-81",
+                "legal_name": "Short Phone LTDA",
+                "contact_email": "short@phone.example",
+                "phone": "123456789",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("phone", response.data)
+        self.assertEqual(Merchant.objects.count(), 0)
+
+    def test_post_with_phone_12_digits_returns_400_too_long(self):
+        response = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": "11.222.333/0001-81",
+                "legal_name": "Long Phone LTDA",
+                "contact_email": "long@phone.example",
+                "phone": "123456789012",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("phone", response.data)
+        self.assertEqual(Merchant.objects.count(), 0)
+
+    def test_post_with_phone_special_characters_returns_400(self):
+        response = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": "11.222.333/0001-81",
+                "legal_name": "Special Phone LTDA",
+                "contact_email": "special@phone.example",
+                "phone": "119123!4567@",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("phone", response.data)
+        self.assertEqual(Merchant.objects.count(), 0)
+
+    def test_patch_in_draft_with_valid_phone_returns_200(self):
+        created = self.create_merchant()
+
+        valid_phones = ["1191234567", "11991234567"]
+        for valid_phone in valid_phones:
+            with self.subTest(phone=valid_phone):
+                response = self.client.patch(
+                    reverse("merchant-detail", kwargs={"pk": created.data["id"]}),
+                    {"phone": valid_phone},
+                    format="json",
+                )
+
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                self.assertEqual(response.data["phone"], valid_phone)
+                self.assertEqual(response.data["status"], "draft")
+
+                merchant = Merchant.objects.get(pk=created.data["id"])
+                self.assertEqual(merchant.phone, valid_phone)
+
+    def test_patch_in_draft_with_empty_phone_clears_field(self):
+        response = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": "11.222.333/0001-81",
+                "legal_name": "Clear Phone LTDA",
+                "contact_email": "clear@phone.example",
+                "phone": "1191234567",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        response = self.client.patch(
+            reverse("merchant-detail", kwargs={"pk": response.data["id"]}),
+            {"phone": ""},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["phone"], "")
+
+        merchant = Merchant.objects.get(pk=response.data["id"])
+        self.assertEqual(merchant.phone, "")
+
+    def test_patch_in_draft_with_invalid_phone_returns_400(self):
+        created = self.client.post(
+            reverse("merchant-list"),
+            {
+                "cnpj": "11.222.333/0001-81",
+                "legal_name": "Invalid Patch Phone LTDA",
+                "contact_email": "invalid@patch.example",
+                "phone": "1191234567",
+            },
+            format="json",
+        )
+        self.assertEqual(created.status_code, status.HTTP_201_CREATED)
+
+        response = self.client.patch(
+            reverse("merchant-detail", kwargs={"pk": created.data["id"]}),
+            {"phone": "abcdefghij"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("phone", response.data)
+
+        merchant = Merchant.objects.get(pk=created.data["id"])
+        self.assertEqual(merchant.phone, "1191234567")
+
+
+class PhoneValidatorStructureTests(SimpleTestCase):
+    def test_phone_validator_is_separate_class_with_validate_method(self):
+        from merchants.validators import CNPJValidator, PhoneValidator
+
+        self.assertNotEqual(PhoneValidator, CNPJValidator)
+        self.assertTrue(hasattr(PhoneValidator, "validate"))
+        self.assertTrue(callable(getattr(PhoneValidator, "validate")))
+
+    def test_phone_validator_accepts_10_and_11_digit_strings(self):
+        from merchants.validators import PhoneValidator
+
+        self.assertTrue(PhoneValidator.validate("1191234567"))
+        self.assertTrue(PhoneValidator.validate("11991234567"))
+
+    def test_phone_validator_rejects_non_digit_and_out_of_range(self):
+        from merchants.validators import PhoneValidator
+
+        self.assertFalse(PhoneValidator.validate(""))
+        self.assertFalse(PhoneValidator.validate("123456789"))
+        self.assertFalse(PhoneValidator.validate("123456789012"))
+        self.assertFalse(PhoneValidator.validate("abcdefghij"))
+        self.assertFalse(PhoneValidator.validate("(11) 91234-5678"))
+        self.assertFalse(PhoneValidator.validate("119123!4567@"))
+        self.assertFalse(PhoneValidator.validate(None))

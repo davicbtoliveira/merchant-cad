@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from merchants.models import Merchant, MerchantEvent
-from merchants.validators import CNPJValidator
+from merchants.validators import CNPJValidator, PhoneValidator
 
 
 class MerchantSerializer(serializers.ModelSerializer):
@@ -37,6 +37,13 @@ class MerchantSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Merchant with this CNPJ already exists.")
 
         return normalized_cnpj
+
+    def validate_phone(self, value: str) -> str:
+        if not value:
+            return value
+        if not PhoneValidator.validate(value):
+            raise serializers.ValidationError("Invalid phone.")
+        return value
 
 
 class MerchantEventSerializer(serializers.ModelSerializer):
