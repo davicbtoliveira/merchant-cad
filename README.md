@@ -1,266 +1,192 @@
 # Merchant CAD
 
-API backend para cadastro e análise de merchants.
+API para cadastro e análise de Merchants, desenvolvida como solução para o desafio técnico da Beeteller. O sistema gerencia o ciclo de vida de um merchant, desde o rascunho até a aprovação ou rejeição, mantendo um histórico completo de eventos (timeline).
 
-## Caminhos de execução
-
-O projeto oferece dois caminhos para rodar a aplicação:
-
-- **SQLite (local)** — recomendado para avaliação rápida. Nenhuma dependência
-  externa além do Python.
-- **PostgreSQL via Docker** — ambiente reproduzível com banco relacional.
-  Requer Docker e Docker Compose.
-
-A escolha do banco é definida por ambiente. Sem variáveis `POSTGRES_*`, o
-Django usa SQLite. Com `POSTGRES_DB` configurada, usa PostgreSQL. Nenhuma regra
-de negócio muda entre os bancos.
+O projeto foi desenvolvido utilizando **Python/Django** com **Django REST Framework (DRF)** no backend e **React/TypeScript** no frontend, com suporte a **Docker** para facilitar o deploy e a reprodução do ambiente.
 
 ---
 
-## SQLite (local)
+## 📋 Checklist do Desafio
 
-### Configuração
+Este projeto foi desenhado para atender a todos os **requisitos técnicos** e **critérios de avaliação** exigidos no teste:
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-python manage.py migrate
-```
-
-### Execução
-
-```bash
-python manage.py runserver
-```
-
-### Testes
-
-```bash
-python manage.py test
-```
+- [x] **Projeto Django funcional** com Django REST Framework (DRF).
+- [x] **Modelagem e Migrations** para versionamento do banco de dados.
+- [x] **Serializers e ViewSets** para exposição da API REST.
+- [x] **Validações de regra de negócio** (transições de estado, campos obrigatórios, unicidade de CNPJ).
+- [x] **Testes automatizados** (Backend com `unittest`, Frontend com Vitest e Playwright para E2E).
+- [x] **README** com instruções claras para execução.
+- [x] **Explicação das decisões técnicas e Trade-offs** (detalhados abaixo).
+- [x] **Código limpo** e maturidade geral (Separação de camadas, ADRs).
+- [x] **Bônus**: Implementação com Docker e Frontend em React.
 
 ---
 
-## PostgreSQL via Docker
+## 🚀 Como Executar
 
-### Requisitos
+O projeto oferece duas formas de execução: via Docker Compose (recomendado) ou localmente.
 
-- Docker
-- Docker Compose
+### Opção 1: Docker Compose (Recomendado)
+Sobe o banco de dados PostgreSQL, a API Django e o Frontend React de uma só vez.
 
-### Subir o ambiente
+**Pré-requisitos:** Docker e Docker Compose instalados.
 
 ```bash
-# Construir a imagem da aplicação
-docker compose build
+# Construir e subir os containers
+docker compose up -d --build
 
-# Subir aplicação e banco de dados
-docker compose up -d
-
-# Rodar as migrations no PostgreSQL
+# Executar as migrations no banco PostgreSQL
 docker compose run --rm app python manage.py migrate
 ```
 
-A API fica disponível em `http://localhost:8000/`.
+- **Frontend:** `http://localhost/`
+- **API:** `http://localhost:8000/api/merchants/`
 
-### Executar testes
+### Opção 2: Execução Local
+Ideal para avaliação rápida sem Docker (usará SQLite por padrão).
 
+#### Backend (Django)
 ```bash
-docker compose run --rm app python manage.py test
+# Criar e ativar ambiente virtual
+python -m venv .venv
+source .venv/bin/activate  # No Windows: .venv\Scripts\activate
+
+# Instalar dependências e aplicar migrations
+pip install -r requirements.txt
+python manage.py migrate
+
+# Rodar o servidor
+python manage.py runserver
 ```
 
-### Acessar a API
-
-```bash
-# Listar merchants
-curl http://localhost:8000/api/merchants/
-
-# Criar um merchant
-curl -X POST http://localhost:8000/api/merchants/ \
-  -H "Content-Type: application/json" \
-  -d '{"cnpj":"11.222.333/0001-81","legal_name":"Acme Pagamentos LTDA","contact_email":"ops@acme.example"}'
-```
-
-### Gerenciar os containers
-
-```bash
-# Parar os containers (dados persistem no volume)
-docker compose down
-
-# Parar e remover o volume de dados do PostgreSQL
-docker compose down -v
-```
-
-### Observações
-
-- O banco PostgreSQL persiste os dados em um volume nomeado (`postgres_data`).
-- O serviço da aplicação só inicia após o PostgreSQL estar pronto (healthcheck).
-- A escolha do banco é feita por ambiente: a configuração do Compose define as
-  variáveis `POSTGRES_*` que ativam o PostgreSQL. Sem essas variáveis, o Django
-  volta para SQLite automaticamente.
-
----
-
-## Campos da API
-
-A API usa nomes de campos em inglês:
-
-```text
-razão social    -> legal_name
-nome fantasia   -> trade_name
-e-mail contato  -> contact_email
-telefone        -> phone
-```
-
-`cnpj`, `legal_name` e `contact_email` são obrigatórios. `trade_name` e `phone`
-são opcionais. Quando preenchido, `phone` deve conter apenas dígitos, com
-10 dígitos (fixo) ou 11 dígitos (móvel) — cobertura do formato brasileiro.
-Entradas com letras, pontuação ou outros caracteres não-dígitos são rejeitadas
-com `400 Bad Request`. O backend não normaliza `phone`: o valor enviado é
-armazenado como recebido.
-
-## Endpoints da API
-
-```text
-POST /api/merchants/
-GET  /api/merchants/
-GET  /api/merchants/?status=draft
-GET  /api/merchants/{id}/
-PATCH /api/merchants/{id}/
-POST /api/merchants/{id}/submit-for-analysis/
-POST /api/merchants/{id}/approve/
-POST /api/merchants/{id}/reject/
-POST /api/merchants/{id}/block/
-GET  /api/merchants/{id}/timeline/
-```
-
-Novos merchants começam com status `draft`. O CNPJ de entrada pode incluir
-pontuação, mas é salvo apenas com dígitos. As respostas de listagem e detalhe
-incluem apenas os campos públicos do Merchant, sem dados da timeline embutidos.
-
-Dados cadastrais só podem ser atualizados enquanto o merchant está em `draft`.
-O campo `status` é somente leitura nas operações comuns de criação e
-atualização; mudanças de fluxo usam endpoints de ação explícitos.
-
-`POST /api/merchants/{id}/submit-for-analysis/` move um merchant de `draft`
-para `pending_analysis`, cria o primeiro evento da timeline com a mensagem
-`Merchant enviado para análise` e retorna o merchant atualizado.
-
-`POST /api/merchants/{id}/approve/` move um merchant de `pending_analysis`
-para `approved`, cria um evento na timeline com a mensagem
-`Merchant aprovado` e retorna o merchant atualizado.
-
-`POST /api/merchants/{id}/reject/` aceita um payload com `reason` não vazio,
-move um merchant de `pending_analysis` para `rejected`, cria um evento na
-timeline com a mensagem `Merchant rejeitado: <motivo>` e retorna o merchant
-atualizado. Rejeição sem `reason`, ou com `reason` vazio, retorna
-`400 Bad Request`. Rejeição em status inválido retorna erro de negócio com
-`422 Unprocessable Entity`.
-
-`POST /api/merchants/{id}/block/` aceita um payload com `reason` não vazio,
-move um merchant de `approved` para `blocked`, cria um evento na timeline com
-a mensagem `Merchant bloqueado: <motivo>` e retorna o merchant atualizado.
-Bloqueio sem `reason`, ou com `reason` vazio, retorna `400 Bad Request`.
-Bloqueio em status inválido retorna erro de negócio com
-`422 Unprocessable Entity`.
-
-`GET /api/merchants/{id}/timeline/` retorna os eventos daquele merchant em
-ordem cronológica.
-
-## Decisões técnicas
-
-- **Django + Django REST Framework** — escolha do ecossistema Django pela
-  produtividade, ORM embutido e suporte a migrations, combinado com DRF para
-  expor a API REST de forma consistente.
-- **SQLite como banco padrão** — elimina dependência externa de banco de dados
-  no caminho local; migrations funcionam com `python manage.py migrate` sem
-  configurar PostgreSQL ou Docker.
-- **PostgreSQL via Docker como opção** — ao definir `POSTGRES_DB` e variáveis
-  relacionadas, a aplicação conecta em PostgreSQL; o ambiente containerizado
-  demonstra maturidade operacional sem tornar Docker obrigatório.
-- **Sem autenticação** — fora do escopo do desafio; a API não exige tokens,
-  sessões nem permissões.
-- **Status controlado por endpoints explícitos** — cada transição de status tem
-  seu próprio endpoint (`submit-for-analysis`, `approve`, `reject`, `block`),
-  validando regras de negócio e gerando eventos na timeline. O campo `status`
-  é somente leitura nas operações comuns.
-- **Timeline separada do Merchant** — eventos são armazenados em modelo próprio
-  (`MerchantEvent`) e expostos em endpoint dedicado, mantendo o detalhe do
-  Merchant simples.
-- **CNPJ normalizado** — o valor enviado é limpo de pontuação e salvo apenas
-  com dígitos, garantindo unicidade independente da formatação de entrada.
-- **Camada de serviços** — regras de transição ficam em `services.py`,
-  mantendo as views finas e as regras testáveis independentemente do contrato
-  HTTP.
-- **Transições inválidas retornam `422 Unprocessable Entity`** — separa erros
-  de negócio de erros de validação de formulário (`400`).
-
-Essas decisões estão documentadas em detalhe em `docs/ADRs/`.
-
----
-
-## Frontend React
-
-O frontend é uma SPA em React + Vite que consome a API REST de Merchants.
-
-### Pré-requisitos
-
-- Node.js 20+
-
-### Execução local
-
+#### Frontend (React)
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-
-O frontend fica disponível em `http://localhost:5173/`. O Vite faz proxy das
-chamadas `/api/` para `http://localhost:8000/` (Django rodando localmente).
-
-### Execução via Docker Compose
-
-O frontend já está incluído no `docker-compose.yml`. Para subir tudo:
-
-```bash
-docker compose build
-docker compose up -d
-```
-
-- Frontend: `http://localhost/` (servido por nginx na porta 80)
-- API: `http://localhost:8000/api/merchants/`
-
-### Testes unitários e de integração
-
-```bash
-cd frontend
-npm test
-```
-
-### Testes E2E (Playwright)
-
-```bash
-# Requer backend rodando (local ou Docker)
-cd frontend
-npm run test:e2e
-```
-
-### Mapa de rotas
-
-| Caminho | Página |
-|---|---|
-| `/merchants` | Lista de merchants com filtro por status |
-| `/merchants/new` | Criar novo merchant |
-| `/merchants/:id` | Detalhe do merchant + timeline + ações de transição |
-| `/merchants/:id/edit` | Editar dados cadastrais (apenas em draft) |
+O frontend estará disponível em `http://localhost:5173/`.
 
 ---
 
-## Fora do escopo inicial
+## 🧪 Testes Automatizados
 
-- Autenticação e autorização.
-- Validação formal de CNPJ (dígitos verificadores e tamanho exato).
-- Integração com API pública de CNPJ (gov.br).
-- Paginação, ordenação avançada e busca textual.
-- Painel administrativo customizado do Django.
+A suíte de testes garante a integridade das regras de negócio e a usabilidade da interface.
+
+```bash
+# Backend (Local)
+python manage.py test
+
+# Backend (Docker)
+docker compose run --rm app python manage.py test
+
+# Frontend (Unitários/Integração)
+cd frontend && npm test
+
+# Frontend (E2E - Requer backend rodando)
+cd frontend && npm run test:e2e
+```
+
+---
+
+## 📡 API Documentation
+
+A API expõe endpoints para as operações de merchants e ações específicas para transição de status, cobrindo os 9 pontos do enunciado.
+
+### Endpoints Principais
+
+| # | Ação | Método | Rota | Payload |
+|---|---|---|---|---|
+| 1 | Cadastrar merchant | `POST` | `/api/merchants/` | `cnpj`, `legal_name`, `contact_email`, etc. |
+| 2 | Consultar por ID | `GET` | `/api/merchants/{id}/` | - |
+| 3 | Listar com filtro | `GET` | `/api/merchants/?status=draft` | Query param `status` |
+| 4 | Atualizar em `draft` | `PATCH`| `/api/merchants/{id}/` | Dados a atualizar |
+
+### Ações de Transição de Status
+As transições possuem endpoints dedicados para garantir a imutabilidade das regras de negócio.
+
+| # | Ação | Método | Rota | Regra de Negócio |
+|---|---|---|---|---|
+| 5 | Enviar para análise | `POST` | `.../{id}/submit-for-analysis/` | Apenas de `draft` para `pending_analysis`. |
+| 6 | Aprovar | `POST` | `.../{id}/approve/` | Apenas de `pending_analysis` para `approved`. |
+| 7 | Rejeitar | `POST` | `.../{id}/reject/` | Apenas de `pending_analysis` para `rejected`. **Exige motivo.** |
+| 8 | Bloquear | `POST` | `.../{id}/block/` | Apenas de `approved` para `blocked`. **Exige motivo.** |
+| 9 | Reabrir | `POST` | `.../{id}/reopen/` | Apenas de `rejected` para `draft`. |
+| 10 | Desbloquear | `POST` | `.../{id}/unblock/` | Apenas de `blocked` para `approved`. |
+| 11 | Timeline | `GET` | `.../{id}/timeline/` | Retorna o histórico de eventos. |
+
+
+*Nota: Violações de regras de negócio retornam `422 Unprocessable Entity`.*
+
+---
+
+## 📊 Modelo de Dados e Regras de Negócio
+
+### Campos do Merchant
+- **Obrigatórios:** `cnpj` (único), `legal_name` (razão social), `contact_email`.
+- **Opcionais:** `trade_name` (nome fantasia), `phone`.
+- **Sistema:** `created_at` (data de criação), `status` (status atual).
+
+### Status Possíveis
+`draft` ➔ `pending_analysis`
+`pending_analysis` ➔ `approved`
+`pending_analysis` ➔ `rejected`
+`approved` ➔ `blocked`
+`rejected` ➔ `draft`
+`blocked` ➔ `approved`
+
+### Timeline de Eventos (Strings Exatas)
+O sistema mantém uma linha do tempo rigorosa. As mensagens dos eventos seguem estritamente o padrão do enunciado:
+1. **Envio para análise:** `"Merchant enviado para análise"`
+2. **Aprovação:** `"Merchant aprovado"`
+3. **Rejeição:** `"Merchant rejeitado: <motivo>"`
+4. **Bloqueio:** `"Merchant bloqueado: <motivo>"`
+5. **Desbloqueio:** `"Merchant desbloqueado: <motivo>"`
+6. **Reabertura:** `"Merchant reaberto: <motivo>"`
+
+---
+
+## 🧠 Decisões Técnicas e Trade-offs (Explicadas com mais detalhes nas ADRs em docs/ADRs)
+
+### 1. Arquitetura e Camada de Serviços (Clean Code)
+- **Decisão:** Utilização de uma camada de serviços (`services.py`) para orquestrar as regras de negócio e transições de estado, separando-a das Views/ViewSets.
+- **Trade-off:** Adiciona uma camada extra de indireção, mas mantém as `views` finas (focadas apenas em HTTP) e as regras de negócio altamente testáveis, reutilizáveis e independentes do contrato da API.
+
+### 2. Transições de Estado Explícitas (Modelagem)
+- **Decisão:** Em vez de permitir a alteração do campo `status` via `PATCH`, cada transição (`submit-for-analysis`, `approve`, `reject`, `block`) possui seu próprio endpoint dedicado.
+- **Trade-off:** Aumenta o número de endpoints, mas garante que as regras de negócio (ex: "só pode aprovar se estiver em análise") sejam aplicadas de forma centralizada. O campo `status` é marcado como `read_only` no serializer, evitando inconsistências.
+
+### 3. Timeline de Eventos
+- **Decisão:** Os eventos são armazenados em um modelo separado (`MerchantEvent`) com chave estrangeira para `Merchant`.
+- **Trade-off:** Exige um `JOIN` ou query extra para buscar a timeline, mas mantém o modelo de `Merchant` limpo e permite que a timeline cresça indefinidamente sem impactar a performance de leituras simples do merchant.
+
+### 4. Tratamento de Erros
+- **Decisão:** Erros de validação de formulário (ex: CNPJ inválido) retornam `400 Bad Request`, enquanto violações de regras de negócio (ex: tentar aprovar um merchant em `draft`) retornam `422 Unprocessable Entity`.
+- **Trade-off:** Diferenciar os códigos HTTP ajuda o cliente da API a distinguir programaticamente entre "dados mal formados" e "operação não permitida pelo fluxo de negócio".
+
+### 5. Banco de Dados (SQLite vs PostgreSQL)
+- **Decisão:** O projeto suporta SQLite (padrão para simplificar testes locais) e PostgreSQL (via Docker).
+- **Trade-off:** SQLite facilita a execução sem dependências externas. PostgreSQL é utilizado no Docker para maturidade operacional e preparar o ambiente para produção. A troca é transparente graças à configuração do Django.
+
+---
+
+## 📂 Estrutura do Projeto
+
+```text
+.
+├── merchant_cad/        # Configurações do projeto Django
+├── merchants/           # App Django principal
+│   ├── migrations/      # Migrations do banco de dados
+│   ├── services.py      # Regras de negócio e transições de estado
+│   ├── models.py        # Modelagem de dados (Merchant, MerchantEvent)
+│   ├── serializers.py   # Validação e serialização DRF
+│   ├── viewsets.py      # Endpoints da API
+│   └── tests/           # Testes automatizados do backend
+├── frontend/            # Aplicação React (Vite + TypeScript)
+│   ├── src/             # Componentes, páginas e hooks
+│   └── e2e/             # Testes End-to-End (Playwright)
+├── docs/                # Documentação
+│   └── ADRs/            # Architecture Decision Records
+├── docker-compose.yml   # Orquestração dos containers
+└── requirements.txt     # Dependências Python
+```
