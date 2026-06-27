@@ -188,5 +188,6 @@ O sistema mantém uma linha do tempo rigorosa. As mensagens dos eventos seguem e
 ├── docs/                # Documentação
 │   └── ADRs/            # Architecture Decision Records
 ├── docker-compose.yml   # Orquestração dos containers
-└── requirements.txt     # Dependências Python
+├── requirements.txt     # Dependências Python de runtime
+└── requirements-dev.txt # Dependências Python de desenvolvimento
 ```
