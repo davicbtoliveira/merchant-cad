@@ -51,7 +51,7 @@ describe("MerchantNewPage", () => {
     const user = userEvent.setup();
     renderNewPage();
 
-    await user.type(screen.getByLabelText("CNPJ"), "00000000000000");
+    await user.type(screen.getByLabelText("CNPJ"), "12345678000195");
     await user.type(screen.getByLabelText("Razão Social"), "Empresa Teste Ltda");
     await user.type(screen.getByLabelText("E-mail"), "teste@teste.com");
 

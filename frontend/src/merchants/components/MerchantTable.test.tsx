@@ -17,7 +17,7 @@ const mockMerchants: Merchant[] = [
   },
   {
     id: 2,
-    cnpj: "55666777000199",
+    cnpj: "12345678000276",
     legal_name: "Comércio ABC S.A.",
     trade_name: "ABC Comércio",
     contact_email: "abc@comercio.com",
@@ -27,7 +27,7 @@ const mockMerchants: Merchant[] = [
   },
   {
     id: 3,
-    cnpj: "AB345678000B72",
+    cnpj: "0NETF1OD000130",
     legal_name: "Empresa Alpha Ltda",
     trade_name: "Alpha",
     contact_email: "alpha@empresa.com",
@@ -47,7 +47,7 @@ describe("MerchantTable", () => {
 
     expect(screen.getByText("Empresa Exemplo Ltda")).toBeInTheDocument();
     expect(screen.getByText("Comércio ABC S.A.")).toBeInTheDocument();
-    expect(screen.getByText("AB.345.678/000B-72")).toBeInTheDocument();
+    expect(screen.getByText("0N.ETF.1OD/0001-30")).toBeInTheDocument();
   });
 
   it("renders empty state when list is empty", () => {

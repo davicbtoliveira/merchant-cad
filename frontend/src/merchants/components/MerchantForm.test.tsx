@@ -67,6 +67,22 @@ describe("MerchantForm", () => {
     );
   });
 
+  it("shows validation error for alphanumeric CNPJ with invalid check digits", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+
+    render(<MerchantForm onSubmit={onSubmit} />);
+
+    await user.type(screen.getByLabelText("CNPJ"), "ab.345.678/000b-71");
+    await user.type(screen.getByLabelText("Razão Social"), "Empresa Teste Ltda");
+    await user.type(screen.getByLabelText("E-mail"), "teste@teste.com");
+
+    await user.click(screen.getByRole("button", { name: "Salvar" }));
+
+    expect(screen.getByText("CNPJ inválido")).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
   it("shows server errors when passed", () => {
     render(
       <MerchantForm

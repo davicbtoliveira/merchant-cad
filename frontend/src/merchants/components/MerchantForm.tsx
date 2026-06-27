@@ -1,7 +1,7 @@
 import { useForm, useController } from "react-hook-form";
 import { Button } from "../../ui/Button";
 import { Input } from "../../ui/Input";
-import { formatCnpjDisplay, normalizeCnpjInput } from "../utils/cnpj";
+import { formatCnpjDisplay, isValidCnpj, normalizeCnpjInput } from "../utils/cnpj";
 import { formatPhoneDisplay } from "../utils/phone";
 
 export interface MerchantFormValues {
@@ -54,6 +54,7 @@ export function MerchantForm({
         if (!/^\d{2}$/.test(cnpj.slice(12, 14))) {
           return "Dígitos verificadores do CNPJ devem ser numéricos";
         }
+        if (!isValidCnpj(cnpj)) return "CNPJ inválido";
         return true;
       },
     },

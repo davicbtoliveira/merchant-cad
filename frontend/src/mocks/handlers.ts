@@ -14,7 +14,7 @@ export const mockMerchants: Merchant[] = [
   },
   {
     id: 2,
-    cnpj: "55666777000199",
+    cnpj: "AB345678000B72",
     legal_name: "Comércio ABC S.A.",
     trade_name: "ABC Comércio",
     contact_email: "abc@comercio.com",
@@ -24,7 +24,7 @@ export const mockMerchants: Merchant[] = [
   },
   {
     id: 3,
-    cnpj: "99888777000111",
+    cnpj: "0NETF1OD000130",
     legal_name: "Serviços XYZ Ltda",
     trade_name: "XYZ Serviços",
     contact_email: "contato@xyz.com",
@@ -34,7 +34,7 @@ export const mockMerchants: Merchant[] = [
   },
   {
     id: 4,
-    cnpj: "12345678000190",
+    cnpj: "12345678000438",
     legal_name: "Loja Rejeitada Ltda",
     trade_name: "Loja Rejeitada",
     contact_email: "rejeitada@loja.com",
@@ -44,7 +44,7 @@ export const mockMerchants: Merchant[] = [
   },
   {
     id: 5,
-    cnpj: "23456789000101",
+    cnpj: "12345678000519",
     legal_name: "Operação Bloqueada S.A.",
     trade_name: "Operação Bloqueada",
     contact_email: "bloqueada@operacao.com",
@@ -123,7 +123,7 @@ export function resetMockData() {
     },
     {
       id: 2,
-      cnpj: "55666777000199",
+      cnpj: "AB345678000B72",
       legal_name: "Comércio ABC S.A.",
       trade_name: "ABC Comércio",
       contact_email: "abc@comercio.com",
@@ -133,7 +133,7 @@ export function resetMockData() {
     },
     {
       id: 3,
-      cnpj: "99888777000111",
+      cnpj: "0NETF1OD000130",
       legal_name: "Serviços XYZ Ltda",
       trade_name: "XYZ Serviços",
       contact_email: "contato@xyz.com",
@@ -143,7 +143,7 @@ export function resetMockData() {
     },
     {
       id: 4,
-      cnpj: "12345678000190",
+      cnpj: "12345678000438",
       legal_name: "Loja Rejeitada Ltda",
       trade_name: "Loja Rejeitada",
       contact_email: "rejeitada@loja.com",
@@ -153,7 +153,7 @@ export function resetMockData() {
     },
     {
       id: 5,
-      cnpj: "23456789000101",
+      cnpj: "12345678000519",
       legal_name: "Operação Bloqueada S.A.",
       trade_name: "Operação Bloqueada",
       contact_email: "bloqueada@operacao.com",
@@ -257,7 +257,7 @@ export const handlers = [
       return HttpResponse.json(errors, { status: 422 });
     }
 
-    if (body.cnpj === "00000000000000") {
+    if (body.cnpj === "12345678000195") {
       return HttpResponse.json(
         { cnpj: ["Merchant with this CNPJ already exists."] },
         { status: 422 },
