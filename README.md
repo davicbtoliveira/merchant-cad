@@ -98,8 +98,21 @@ A API expõe endpoints para as operações de merchants e ações específicas p
 |---|---|---|---|---|
 | 1 | Cadastrar merchant | `POST` | `/api/merchants/` | `cnpj`, `legal_name`, `contact_email`, etc. |
 | 2 | Consultar por ID | `GET` | `/api/merchants/{id}/` | - |
-| 3 | Listar com filtro | `GET` | `/api/merchants/?status=draft` | Query param `status` |
+| 3 | Listar com filtro e paginação | `GET` | `/api/merchants/?status=draft&page=1&page_size=20` | Query params `status`, `page`, `page_size` |
 | 4 | Atualizar em `draft` | `PATCH`| `/api/merchants/{id}/` | Dados a atualizar |
+
+`GET /api/merchants/` retorna resposta paginada no formato DRF:
+
+```json
+{
+  "count": 42,
+  "next": "http://localhost:8000/api/merchants/?page=2",
+  "previous": null,
+  "results": []
+}
+```
+
+O `page_size` padrão é `20` e o máximo permitido é `100`.
 
 ### Ações de Transição de Status
 As transições possuem endpoints dedicados para garantir a imutabilidade das regras de negócio.

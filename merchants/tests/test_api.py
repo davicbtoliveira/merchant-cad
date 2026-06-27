@@ -174,12 +174,15 @@ class MerchantReadTests(MerchantApiTestCase):
         response = self.client.get(reverse("merchant-list"), format="json")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["count"], 2)
+        self.assertIsNone(response.data["next"])
+        self.assertIsNone(response.data["previous"])
         self.assertEqual(
-            [merchant["id"] for merchant in response.data],
+            [merchant["id"] for merchant in response.data["results"]],
             [first.data["id"], second.data["id"]],
         )
 
-        for merchant in response.data:
+        for merchant in response.data["results"]:
             self.assertEqual(
                 set(merchant.keys()),
                 {
@@ -194,6 +197,48 @@ class MerchantReadTests(MerchantApiTestCase):
                 },
             )
             self.assertNotIn("timeline", merchant)
+
+    def test_paginates_merchants(self):
+        cnpjs = [
+            "12345678000195",
+            "12345678000276",
+            "12345678000357",
+        ]
+        for index, cnpj in enumerate(cnpjs, start=1):
+            Merchant.objects.create(
+                cnpj=cnpj,
+                legal_name=f"Merchant {index}",
+                contact_email=f"ops-{index}@merchant.example",
+            )
+
+        first_page = self.client.get(
+            reverse("merchant-list"),
+            {"page_size": 2},
+            format="json",
+        )
+
+        self.assertEqual(first_page.status_code, status.HTTP_200_OK)
+        self.assertEqual(first_page.data["count"], 3)
+        self.assertEqual(len(first_page.data["results"]), 2)
+        self.assertIsNotNone(first_page.data["next"])
+        self.assertIsNone(first_page.data["previous"])
+        self.assertEqual(
+            [merchant["legal_name"] for merchant in first_page.data["results"]],
+            ["Merchant 1", "Merchant 2"],
+        )
+
+        second_page = self.client.get(
+            reverse("merchant-list"),
+            {"page": 2, "page_size": 2},
+            format="json",
+        )
+
+        self.assertEqual(second_page.status_code, status.HTTP_200_OK)
+        self.assertEqual(second_page.data["count"], 3)
+        self.assertEqual(len(second_page.data["results"]), 1)
+        self.assertIsNone(second_page.data["next"])
+        self.assertIsNotNone(second_page.data["previous"])
+        self.assertEqual(second_page.data["results"][0]["legal_name"], "Merchant 3")
 
     def test_filters_merchants_by_status(self):
         valid_cnpjs = [
@@ -220,10 +265,14 @@ class MerchantReadTests(MerchantApiTestCase):
                 )
 
                 self.assertEqual(response.status_code, status.HTTP_200_OK)
-                self.assertEqual(len(response.data), 1)
-                self.assertEqual(response.data[0]["status"], merchant_status)
+                self.assertEqual(response.data["count"], 1)
+                self.assertEqual(len(response.data["results"]), 1)
                 self.assertEqual(
-                    response.data[0]["legal_name"],
+                    response.data["results"][0]["status"],
+                    merchant_status,
+                )
+                self.assertEqual(
+                    response.data["results"][0]["legal_name"],
                     f"Merchant {merchant_status}",
                 )
 

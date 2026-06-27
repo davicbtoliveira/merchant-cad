@@ -207,7 +207,22 @@ export const handlers = [
       result = result.filter((m) => m.status === status);
     }
 
-    return HttpResponse.json(result);
+    const page = Number(url.searchParams.get("page") ?? "1");
+    const pageSize = Number(url.searchParams.get("page_size") ?? "20");
+    const start = (page - 1) * pageSize;
+    const results = result.slice(start, start + pageSize);
+    const count = result.length;
+    const nextUrl = new URL(url);
+    nextUrl.searchParams.set("page", String(page + 1));
+    const previousUrl = new URL(url);
+    previousUrl.searchParams.set("page", String(page - 1));
+
+    return HttpResponse.json({
+      count,
+      next: start + pageSize < count ? nextUrl.toString() : null,
+      previous: page > 1 ? previousUrl.toString() : null,
+      results,
+    });
   }),
 
   http.get("/api/merchants/:id", ({ params }) => {

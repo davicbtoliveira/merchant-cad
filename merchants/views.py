@@ -1,5 +1,6 @@
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 from merchants import services
@@ -11,6 +12,12 @@ from merchants.serializers import (
 )
 
 
+class MerchantPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
 class MerchantViewSet(
     mixins.CreateModelMixin,
     mixins.ListModelMixin,
@@ -19,6 +26,7 @@ class MerchantViewSet(
 ):
     queryset = Merchant.objects.all()
     serializer_class = MerchantSerializer
+    pagination_class = MerchantPagination
 
     def get_queryset(self):
         queryset = super().get_queryset()

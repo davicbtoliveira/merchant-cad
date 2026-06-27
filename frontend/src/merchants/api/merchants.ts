@@ -25,6 +25,13 @@ export interface TimelineEvent {
   created_at: string;
 }
 
+interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
 const BASE_URL = "/api/merchants";
 
 export async function fetchMerchants(
@@ -39,7 +46,8 @@ export async function fetchMerchants(
     throw new Error("Erro ao carregar merchants");
   }
 
-  return response.json();
+  const body = (await response.json()) as PaginatedResponse<Merchant>;
+  return body.results;
 }
 
 export async function fetchMerchant(id: number): Promise<Merchant> {
