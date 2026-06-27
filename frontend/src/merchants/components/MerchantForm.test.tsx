@@ -74,4 +74,55 @@ describe("MerchantForm", () => {
 
     expect(cnpjInput).toHaveValue("11.222.333/0001-81");
   });
+
+  it("renders phone with fixo mask as user types 10 digits", async () => {
+    const user = userEvent.setup();
+    render(<MerchantForm onSubmit={vi.fn()} />);
+
+    const phoneInput = screen.getByLabelText("Telefone");
+    await user.type(phoneInput, "1191234567");
+
+    expect(phoneInput).toHaveValue("(11) 9123-4567");
+  });
+
+  it("renders phone with movel mask as user types 11 digits", async () => {
+    const user = userEvent.setup();
+    render(<MerchantForm onSubmit={vi.fn()} />);
+
+    const phoneInput = screen.getByLabelText("Telefone");
+    await user.type(phoneInput, "11991234567");
+
+    expect(phoneInput).toHaveValue("(11) 99123-4567");
+  });
+
+  it("strips non-digits from phone and submits digits-only", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+
+    render(<MerchantForm onSubmit={onSubmit} />);
+
+    await user.type(screen.getByLabelText("CNPJ"), "11222333000181");
+    await user.type(screen.getByLabelText("Razão Social"), "Empresa Teste Ltda");
+    await user.type(screen.getByLabelText("E-mail"), "teste@teste.com");
+    await user.type(screen.getByLabelText("Telefone"), "11991234567");
+
+    await user.click(screen.getByRole("button", { name: "Salvar" }));
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        phone: "11991234567",
+      }),
+    );
+  });
+
+  it("prefills phone with formatted display from defaultValues", () => {
+    render(
+      <MerchantForm
+        onSubmit={vi.fn()}
+        defaultValues={{ phone: "11991234567" }}
+      />,
+    );
+
+    expect(screen.getByLabelText("Telefone")).toHaveValue("(11) 99123-4567");
+  });
 });
