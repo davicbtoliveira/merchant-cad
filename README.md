@@ -255,7 +255,8 @@ O container de produção usa Gunicorn com múltiplos workers em vez do `runserv
 │   └── ADRs/            # Architecture Decision Records
 ├── docker-compose.yml
 ├── Dockerfile
-├── requirements.txt
+├── requirements.txt     # Dependências Python de runtime
+├── requirements-dev.txt # Dependências Python de desenvolvimento
 └── README.md
 ```
 
