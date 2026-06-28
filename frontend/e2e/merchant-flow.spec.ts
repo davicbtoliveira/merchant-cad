@@ -2,23 +2,23 @@ import { test, expect } from "@playwright/test";
 
 test.describe("Merchant full flow", () => {
   function makeUniqueCnpj(prefix: string) {
-  const ts = Date.now().toString().slice(-8);
-  const digits = `${prefix}${ts.padEnd(12, "0").slice(0, 12)}`;
-  const base12 = digits.slice(0, 12);
-  const w1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-  const w2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-  const dv = (base: string, weights: number[]) => {
-    const total = base
-      .split("")
-      .reduce((sum, c, i) => sum + (c.charCodeAt(0) - 48) * weights[i], 0);
-    const r = total % 11;
-    return r < 2 ? "0" : String(11 - r);
-  };
-  const d1 = dv(base12, w1);
-  const d2 = dv(base12 + d1, w2);
-  const cnpj = `${base12}${d1}${d2}`;
-  return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(5, 8)}/${cnpj.slice(8, 12)}-${cnpj.slice(12, 14)}`;
-}
+    const ts = Date.now().toString().slice(-8);
+    const digits = `${prefix}${ts.padEnd(12, "0").slice(0, 12)}`;
+    const base12 = digits.slice(0, 12);
+    const w1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    const w2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    const dv = (base: string, weights: number[]) => {
+      const total = base
+        .split("")
+        .reduce((sum, c, i) => sum + (c.charCodeAt(0) - 48) * weights[i], 0);
+      const r = total % 11;
+      return r < 2 ? "0" : String(11 - r);
+    };
+    const d1 = dv(base12, w1);
+    const d2 = dv(base12 + d1, w2);
+    const cnpj = `${base12}${d1}${d2}`;
+    return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(5, 8)}/${cnpj.slice(8, 12)}-${cnpj.slice(12, 14)}`;
+  }
 
   const uniqueId = Date.now().toString().slice(-6);
   const cnpj = makeUniqueCnpj("12");
@@ -67,10 +67,14 @@ test.describe("Merchant full flow", () => {
     await expect(page.getByText("Merchant aprovado")).toBeVisible();
 
     await page.getByRole("button", { name: "Bloquear" }).click();
-    await page.getByPlaceholder("Motivo (obrigatório)").fill("Atividade suspeita");
+    await page
+      .getByPlaceholder("Motivo (obrigatório)")
+      .fill("Atividade suspeita");
     await page.getByRole("button", { name: "Confirmar" }).click();
     await expect(page.getByText("Bloqueado", { exact: true })).toBeVisible();
-    await expect(page.getByText("Merchant bloqueado: Atividade suspeita")).toBeVisible();
+    await expect(
+      page.getByText("Merchant bloqueado: Atividade suspeita"),
+    ).toBeVisible();
 
     await page.getByRole("button", { name: /Voltar/i }).click();
     await expect(page).toHaveURL(/\/merchants$/);
@@ -93,7 +97,9 @@ test.describe("Merchant full flow", () => {
     await expect(page.getByText("Em análise", { exact: true })).toBeVisible();
 
     await page.getByRole("button", { name: "Rejeitar" }).click();
-    await page.getByPlaceholder("Motivo (obrigatório)").fill("Documentação incompleta");
+    await page
+      .getByPlaceholder("Motivo (obrigatório)")
+      .fill("Documentação incompleta");
     await page.getByRole("button", { name: "Confirmar" }).click();
     await expect(page.getByText("Rejeitado", { exact: true })).toBeVisible();
     await expect(
@@ -101,7 +107,9 @@ test.describe("Merchant full flow", () => {
     ).toBeVisible();
   });
 
-  test("edit blocked for approved merchant shows 422 error", async ({ page }) => {
+  test("edit blocked for approved merchant shows 422 error", async ({
+    page,
+  }) => {
     const blockId = Date.now().toString().slice(-4);
     const blockCnpj = makeUniqueCnpj("56");
     const blockName = `Empresa Bloqueada ${blockId}`;
@@ -122,6 +130,10 @@ test.describe("Merchant full flow", () => {
     const url = page.url();
     await page.goto(`${url}/edit`);
     await page.getByRole("button", { name: "Salvar" }).click();
-    await expect(page.getByText(/only be updated while in draft/i)).toBeVisible({ timeout: 10000 });
+    await expect(
+      page.getByText(
+        /Dados cadastrais só podem ser atualizados enquanto o merchant estiver em rascunho./i,
+      ),
+    ).toBeVisible({ timeout: 10000 });
   });
 });
