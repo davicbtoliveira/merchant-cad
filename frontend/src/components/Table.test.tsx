@@ -1,8 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
-import type { Merchant } from "../api/merchants";
-import { MerchantTable } from "./MerchantTable";
+import type { Merchant } from "../types/merchant";
+import { MerchantTable } from "./Table";
 
 const mockMerchants: Merchant[] = [
   {

@@ -1,8 +1,8 @@
 import { useNavigate, useSearchParams } from "react-router";
-import { Button } from "../../ui/Button";
-import { Select } from "../../ui/Select";
-import { useMerchants } from "../api/merchants";
-import { MerchantTable } from "../components/MerchantTable";
+import { Button } from "../ui/Button";
+import { Select } from "../ui/Select";
+import { useMerchants } from "../hooks/useMerchants";
+import { MerchantTable } from "../components/Table";
 
 const statusOptions = [
   { value: "draft", label: "Rascunho" },

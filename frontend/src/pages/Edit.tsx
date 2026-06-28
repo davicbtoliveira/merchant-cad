@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import { Button } from "../../ui/Button";
-import { Spinner } from "../../ui/Spinner";
-import { useMerchant, useUpdateMerchant } from "../api/merchants";
-import { MerchantForm } from "../components/MerchantForm";
-import type { MerchantFormValues } from "../components/MerchantForm";
+import { Button } from "../ui/Button";
+import { Spinner } from "../ui/Spinner";
+import { useMerchant, useUpdateMerchant } from "../hooks/useMerchants";
+import { MerchantForm } from "../components/Form";
+import type { MerchantFormValues } from "../components/Form";
 
 export function MerchantEditPage() {
   const { id } = useParams<{ id: string }>();

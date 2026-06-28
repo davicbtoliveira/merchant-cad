@@ -22,6 +22,10 @@ export function formatCnpjDisplay(value: string): string {
   return `${cnpj.slice(0, 2)}.${cnpj.slice(2, 5)}.${cnpj.slice(5, 8)}/${cnpj.slice(8, 12)}-${cnpj.slice(12, 14)}`;
 }
 
+export function formatCnpj(cnpj: string): string {
+  return formatCnpjDisplay(cnpj);
+}
+
 export function isValidCnpj(value: string): boolean {
   const cnpj = normalizeCnpjForValidation(value);
 

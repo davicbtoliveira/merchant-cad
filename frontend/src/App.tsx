@@ -1,10 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router";
 import { Toaster } from "sonner";
-import { MerchantDetailPage } from "./merchants/pages/MerchantDetailPage";
-import { MerchantListPage } from "./merchants/pages/MerchantListPage";
-import { MerchantNewPage } from "./merchants/pages/MerchantNewPage";
-import { MerchantEditPage } from "./merchants/pages/MerchantEditPage";
+import { MerchantDetailPage } from "./pages/Detail";
+import { MerchantListPage } from "./pages/List";
+import { MerchantNewPage } from "./pages/New";
+import { MerchantEditPage } from "./pages/Edit";
 
 const queryClient = new QueryClient();
 

@@ -2,8 +2,8 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
-import type { Merchant } from "../api/merchants";
-import { MerchantActions } from "./MerchantActions";
+import type { Merchant } from "../types/merchant";
+import { MerchantActions } from "./Actions";
 
 function renderActions(merchant: Merchant) {
   const queryClient = new QueryClient({

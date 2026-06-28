@@ -1,7 +1,9 @@
 import { useNavigate } from "react-router";
-import { Spinner } from "../../ui/Spinner";
-import { formatCnpj, formatDate, type Merchant } from "../api/merchants";
-import { MerchantStatusBadge } from "./MerchantStatusBadge";
+import { Spinner } from "../ui/Spinner";
+import type { Merchant } from "../types/merchant";
+import { formatCnpj } from "../utils/cnpj";
+import { formatDate } from "../utils/date";
+import { MerchantStatusBadge } from "./StatusBadge";
 
 interface MerchantTableProps {
   merchants: Merchant[];

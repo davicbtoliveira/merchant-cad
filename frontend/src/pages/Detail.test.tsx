@@ -3,8 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it } from "vitest";
-import { resetMockData } from "../../mocks/handlers";
-import { MerchantDetailPage } from "./MerchantDetailPage";
+import { resetMockData } from "../mocks/handlers";
+import { MerchantDetailPage } from "./Detail";
 
 function renderDetailPage(merchantId: string) {
   const queryClient = new QueryClient({

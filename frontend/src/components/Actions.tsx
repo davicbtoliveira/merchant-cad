@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "../../ui/Button";
-import type { Merchant } from "../api/merchants";
+import { Button } from "../ui/Button";
+import type { Merchant } from "../types/merchant";
 import {
   useSubmitForAnalysis,
   useApproveMerchant,
@@ -9,7 +9,7 @@ import {
   useBlockMerchant,
   useReopenMerchant,
   useUnblockMerchant,
-} from "../api/merchants";
+} from "../hooks/useMerchants";
 
 interface MerchantActionsProps {
   merchant: Merchant;
