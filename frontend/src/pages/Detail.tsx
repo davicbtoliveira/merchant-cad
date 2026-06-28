@@ -5,6 +5,7 @@ import { Spinner } from "../ui/Spinner";
 import { useMerchant } from "../hooks/useMerchants";
 import { formatCnpj } from "../utils/cnpj";
 import { formatDate } from "../utils/date";
+import { formatPhoneDisplay } from "../utils/phone";
 import { MerchantStatusBadge } from "../components/StatusBadge";
 import { MerchantActions } from "../components/Actions";
 import { MerchantTimeline } from "../components/Timeline";
@@ -142,7 +143,7 @@ export function MerchantDetailPage() {
               Telefone
             </dt>
             <dd className="mt-1 text-sm text-gray-900">
-              {merchant.phone || "-"}
+              {merchant.phone ? formatPhoneDisplay(merchant.phone) : "-"}
             </dd>
           </div>
           <div>

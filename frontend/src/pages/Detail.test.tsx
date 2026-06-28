@@ -35,6 +35,7 @@ describe("MerchantDetailPage", () => {
 
     expect(screen.getByText("Aprovado")).toBeInTheDocument();
     expect(screen.getByText("abc@comercio.com")).toBeInTheDocument();
+    expect(screen.getByText("(11) 88888-8888")).toBeInTheDocument();
     expect(screen.getByText(/ABC Comércio/)).toBeInTheDocument();
   });
 
