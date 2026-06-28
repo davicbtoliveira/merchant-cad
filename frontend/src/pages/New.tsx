@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { Button } from "../../ui/Button";
-import { useCreateMerchant } from "../api/merchants";
-import { MerchantForm } from "../components/MerchantForm";
-import type { MerchantFormValues } from "../components/MerchantForm";
+import { Button } from "../ui/Button";
+import { useCreateMerchant } from "../hooks/useMerchants";
+import { MerchantForm } from "../components/Form";
+import type { MerchantFormValues } from "../components/Form";
 
 export function MerchantNewPage() {
   const navigate = useNavigate();

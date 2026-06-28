@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { MerchantStatusBadge } from "./MerchantStatusBadge";
+import { MerchantStatusBadge } from "./StatusBadge";
 
 describe("MerchantStatusBadge", () => {
   it("renders draft status with correct text", () => {

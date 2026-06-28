@@ -1,6 +1,6 @@
 import { useForm, useController } from "react-hook-form";
-import { Button } from "../../ui/Button";
-import { Input } from "../../ui/Input";
+import { Button } from "../ui/Button";
+import { Input } from "../ui/Input";
 import { formatCnpjDisplay, isValidCnpj, normalizeCnpjInput } from "../utils/cnpj";
 import { formatPhoneDisplay } from "../utils/phone";
 

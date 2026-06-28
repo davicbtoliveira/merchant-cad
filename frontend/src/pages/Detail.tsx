@@ -1,15 +1,13 @@
 import { useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
-import { Button } from "../../ui/Button";
-import { Spinner } from "../../ui/Spinner";
-import {
-  formatCnpj,
-  formatDate,
-  useMerchant,
-} from "../api/merchants";
-import { MerchantStatusBadge } from "../components/MerchantStatusBadge";
-import { MerchantActions } from "../components/MerchantActions";
-import { MerchantTimeline } from "../components/MerchantTimeline";
+import { Button } from "../ui/Button";
+import { Spinner } from "../ui/Spinner";
+import { useMerchant } from "../hooks/useMerchants";
+import { formatCnpj } from "../utils/cnpj";
+import { formatDate } from "../utils/date";
+import { MerchantStatusBadge } from "../components/StatusBadge";
+import { MerchantActions } from "../components/Actions";
+import { MerchantTimeline } from "../components/Timeline";
 
 export function MerchantDetailPage() {
   const { id } = useParams<{ id: string }>();

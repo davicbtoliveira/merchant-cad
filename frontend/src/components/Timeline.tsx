@@ -1,5 +1,6 @@
-import { Spinner } from "../../ui/Spinner";
-import { formatDateTime, useTimeline } from "../api/merchants";
+import { Spinner } from "../ui/Spinner";
+import { useTimeline } from "../hooks/useMerchants";
+import { formatDateTime } from "../utils/date";
 
 interface MerchantTimelineProps {
   merchantId: number;

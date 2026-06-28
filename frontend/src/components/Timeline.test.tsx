@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
-import { MerchantTimeline } from "./MerchantTimeline";
+import { MerchantTimeline } from "./Timeline";
 
 function renderTimeline(merchantId: number) {
   const queryClient = new QueryClient({

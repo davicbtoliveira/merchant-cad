@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it } from "vitest";
-import { MerchantListPage } from "./MerchantListPage";
+import { MerchantListPage } from "./List";
 
 function renderPage(initialRoute = "/merchants") {
   const queryClient = new QueryClient({

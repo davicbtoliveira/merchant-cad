@@ -1,5 +1,5 @@
 import { http, HttpResponse } from "msw";
-import type { Merchant, TimelineEvent } from "../merchants/api/merchants";
+import type { Merchant, TimelineEvent } from "../types/merchant";
 
 export const mockMerchants: Merchant[] = [
   {

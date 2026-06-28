@@ -1,4 +1,4 @@
-import type { MerchantStatus } from "../api/merchants";
+import type { MerchantStatus } from "../types/merchant";
 
 const statusConfig: Record<
   MerchantStatus,
